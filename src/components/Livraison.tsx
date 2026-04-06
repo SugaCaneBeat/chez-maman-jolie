@@ -112,7 +112,7 @@ export default function Livraison({ data }: { data: LivraisonData }) {
         <ScrollAnimation delay={400}>
           <div className="text-center mt-12">
             <a
-              href="https://wa.me/33712345678"
+              href="https://wa.me/33744275428"
               target="_blank"
               rel="noopener noreferrer"
               className="group inline-flex items-center gap-3 bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold px-10 py-5 rounded-2xl text-lg transition-all hover:scale-105 shadow-2xl shadow-[#25D366]/20"

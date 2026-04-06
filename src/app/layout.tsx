@@ -26,6 +26,9 @@ export const metadata: Metadata = {
     "Congo",
     "Sénégal",
   ],
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

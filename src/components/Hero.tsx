@@ -47,7 +47,7 @@ export default function Hero() {
         {/* CTA buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-20 animate-fade-in-up animation-delay-300">
           <a
-            href="https://wa.me/33712345678"
+            href="https://wa.me/33744275428"
             target="_blank"
             rel="noopener noreferrer"
             className="group inline-flex items-center justify-center gap-3 bg-gradient-to-r from-primary to-primary-light hover:from-primary-light hover:to-primary text-dark font-bold px-8 py-4 sm:py-5 rounded-2xl text-base sm:text-lg transition-all hover:scale-105 hover:shadow-2xl hover:shadow-primary/30"

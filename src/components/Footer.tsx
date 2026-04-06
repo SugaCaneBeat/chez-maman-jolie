@@ -34,10 +34,10 @@ export default function Footer() {
           <div>
             <h4 className="text-white/50 text-xs font-bold uppercase tracking-widest mb-4">Contact</h4>
             <div className="space-y-2">
-              <a href="tel:+33712345678" className="block text-white/40 hover:text-primary transition-colors text-sm">
-                07 12 34 56 78
+              <a href="tel:+33744275428" className="block text-white/40 hover:text-primary transition-colors text-sm">
+                07 44 27 54 28
               </a>
-              <a href="https://wa.me/33712345678" target="_blank" rel="noopener noreferrer" className="block text-white/40 hover:text-[#25D366] transition-colors text-sm">
+              <a href="https://wa.me/33744275428" target="_blank" rel="noopener noreferrer" className="block text-white/40 hover:text-[#25D366] transition-colors text-sm">
                 WhatsApp
               </a>
               <p className="text-white/30 text-sm">

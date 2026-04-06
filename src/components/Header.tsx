@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 const navItems = [
   { label: "Accueil", href: "#accueil" },
@@ -29,13 +30,15 @@ export default function Header() {
     >
       <div className="max-w-7xl mx-auto px-5 sm:px-8">
         <div className="flex items-center justify-between h-18 sm:h-22">
-          <a href="#accueil" className="flex flex-col group">
-            <span className="font-heading text-gradient text-xl sm:text-2xl font-bold tracking-wide group-hover:opacity-80 transition-opacity">
-              Chez Maman Jolie
-            </span>
-            <span className="text-[9px] sm:text-[10px] text-white/40 tracking-[0.25em] uppercase font-light">
-              Cuisine Africaine Authentique
-            </span>
+          <a href="#accueil" className="group hover:opacity-80 transition-opacity">
+            <Image
+              src="/logo.svg"
+              alt="Chez Maman Jolie"
+              width={180}
+              height={54}
+              className="h-10 sm:h-12 w-auto"
+              priority
+            />
           </a>
 
           {/* Desktop nav */}
@@ -50,7 +53,7 @@ export default function Header() {
               </a>
             ))}
             <a
-              href="https://wa.me/33712345678"
+              href="https://wa.me/33744275428"
               target="_blank"
               rel="noopener noreferrer"
               className="ml-4 bg-gradient-to-r from-primary to-primary-light hover:from-primary-light hover:to-primary text-dark font-bold px-6 py-2.5 rounded-full text-sm transition-all hover:shadow-lg hover:shadow-primary/25 hover:scale-105"
@@ -89,7 +92,7 @@ export default function Header() {
               </a>
             ))}
             <a
-              href="https://wa.me/33712345678"
+              href="https://wa.me/33744275428"
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setIsOpen(false)}

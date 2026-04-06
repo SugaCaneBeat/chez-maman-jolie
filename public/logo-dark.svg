@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" fill="none">
+  <!-- Decorative line left -->
+  <line x1="20" y1="55" x2="85" y2="55" stroke="#C9922A" stroke-width="1" opacity="0.6"/>
+  <circle cx="90" cy="55" r="2" fill="#C9922A" opacity="0.8"/>
+
+  <!-- Main text: Chez Maman -->
+  <text x="200" y="50" text-anchor="middle" font-family="Georgia, 'Playfair Display', serif" font-size="32" font-weight="400" letter-spacing="2">
+    <tspan fill="#111008">Chez Maman </tspan>
+    <tspan fill="#C9922A" font-style="italic" font-weight="700">Jolie</tspan>
+  </text>
+
+  <!-- Decorative line right -->
+  <circle cx="310" cy="55" r="2" fill="#C9922A" opacity="0.8"/>
+  <line x1="315" y1="55" x2="380" y2="55" stroke="#C9922A" stroke-width="1" opacity="0.6"/>
+
+  <!-- Gold decorative divider -->
+  <line x1="130" y1="68" x2="270" y2="68" stroke="#C9922A" stroke-width="0.5" opacity="0.4"/>
+  <path d="M195 65 L200 60 L205 65 L200 70 Z" fill="#C9922A" opacity="0.6"/>
+
+  <!-- Subtitle -->
+  <text x="200" y="88" text-anchor="middle" font-family="'Inter', 'Helvetica Neue', sans-serif" font-size="10" letter-spacing="4" text-transform="uppercase">
+    <tspan fill="#111008" opacity="0.5">CUISINE AFRICAINE AUTHENTIQUE</tspan>
+  </text>
+</svg>
