@@ -1,0 +1,50 @@
+{
+  "categories": [
+    {
+      "name": "Jus Maison",
+      "image": "https://images.unsplash.com/photo-1622597467836-f3285f2131b8?w=600&q=80",
+      "items": [
+        { "name": "Gingembre", "price": 3 },
+        { "name": "Bissap", "price": 3 },
+        { "name": "Baobab", "price": 3 },
+        { "name": "Corossol", "price": 3 }
+      ]
+    },
+    {
+      "name": "Softs",
+      "image": "https://images.unsplash.com/photo-1527960471264-932f39eb5846?w=600&q=80",
+      "items": [
+        { "name": "Coca-Cola / Fanta / Sprite", "price": 2 },
+        { "name": "Eau minérale", "price": 1.50 },
+        { "name": "Jus de fruits (bouteille)", "price": 3 }
+      ]
+    },
+    {
+      "name": "Bières",
+      "image": "https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=600&q=80",
+      "items": [
+        { "name": "Heineken 25cl", "price": 3 },
+        { "name": "Heineken 50cl", "price": 5 },
+        { "name": "Primus / Mutzig", "price": 4 }
+      ]
+    },
+    {
+      "name": "Cocktails",
+      "image": "https://images.unsplash.com/photo-1514362545857-3bc16c8c7f1b?w=600&q=80",
+      "items": [
+        { "name": "Mojito", "price": 8 },
+        { "name": "Punch maison", "price": 6 },
+        { "name": "Ti'Punch", "price": 5 }
+      ]
+    },
+    {
+      "name": "Vins & Champagnes",
+      "image": "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&q=80",
+      "items": [
+        { "name": "Verre de vin rouge/blanc", "price": 4 },
+        { "name": "Bouteille de vin", "price": 18 },
+        { "name": "Champagne (bouteille)", "price": 35 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+[
+  { "name": "Tiramisu Mangue & Spéculos", "price": 3.30, "image": "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600&q=80" },
+  { "name": "Panna cotta", "price": 3.50, "image": "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=600&q=80" },
+  { "name": "Häagen-Dazs", "price": 4.00, "image": "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?w=600&q=80" },
+  { "name": "Salade de fruits", "price": 4.50, "image": "https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?w=600&q=80" }
+]

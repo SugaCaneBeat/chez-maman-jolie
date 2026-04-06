@@ -1,0 +1,19 @@
+{
+  "zones": [
+    { "name": "Zone 1 — Moins de 3 km", "frais": "Gratuit dès 25 €", "delai": "~30 min" },
+    { "name": "Zone 2 — 3 à 6 km", "frais": "2,50 € dès 20 €", "delai": "~40 min" },
+    { "name": "Zone 3 — 6 à 10 km", "frais": "4,50 € dès 30 €", "delai": "~50 min" }
+  ],
+  "minimum": "15 €",
+  "paiement": ["Espèces à la livraison", "Virement", "Lydia / PayLib"],
+  "horaires": {
+    "semaine": { "jours": "Lundi – Vendredi", "heures": "11h00 – 21h30" },
+    "weekend": { "jours": "Samedi – Dimanche", "heures": "11h00 – 22h30" }
+  },
+  "tunnel": [
+    { "step": 1, "title": "Choisir", "description": "Parcourez notre carte et choisissez vos plats" },
+    { "step": 2, "title": "Contacter", "description": "Envoyez votre commande par WhatsApp" },
+    { "step": 3, "title": "Confirmer", "description": "Nous confirmons votre commande et le délai" },
+    { "step": 4, "title": "Recevoir", "description": "Recevez vos plats chauds chez vous" }
+  ]
+}

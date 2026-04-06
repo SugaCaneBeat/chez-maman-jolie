@@ -1,0 +1,8 @@
+{
+  "formules": [
+    { "name": "Entrée + Plat + Boisson", "price": 15 },
+    { "name": "Plat + Dessert + Boisson", "price": 15 },
+    { "name": "Entrée + Plat + Dessert + Boisson", "price": 20 }
+  ],
+  "conditions": "Valables pour : Mafé, Yassa, Thiéboudiène, Cuisses de poulet. Boisson soft au choix."
+}

@@ -1,0 +1,7 @@
+[
+  { "name": "Poulet au Muamba (pâte d'arachide)", "accompagnement": "Riz ou chikwang", "price": 10, "image": "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=600&q=80" },
+  { "name": "Madesu (haricots)", "accompagnement": "Riz", "price": 8, "image": "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&q=80" },
+  { "name": "5 Ailes de poulet", "accompagnement": "Banane plantain", "price": 9, "image": "https://images.unsplash.com/photo-1527477396000-e27163b481c2?w=600&q=80" },
+  { "name": "5 Brochettes", "accompagnement": "Banane plantain ou chikwang", "price": 10, "image": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&q=80" },
+  { "name": "Yassa Poulet", "accompagnement": "Riz", "price": 9, "image": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=600&q=80" }
+]
