@@ -9,10 +9,13 @@ import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import ScrollAnimation from "@/components/ScrollAnimation";
+import { getMenuData } from "@/lib/menu";
 
 import livraisonData from "@/data/livraison.json";
 
-export default function Home() {
+export default async function Home() {
+  const categories = await getMenuData();
+
   return (
     <CartProvider>
       <Header />
@@ -39,7 +42,7 @@ export default function Home() {
                 </p>
               </div>
             </ScrollAnimation>
-            <MenuTabs />
+            <MenuTabs categories={categories} />
           </div>
         </section>
 
