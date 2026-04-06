@@ -1,3 +1,7 @@
+"use client";
+
+import AddToCartButton from "./AddToCartButton";
+
 interface Formule {
   name: string;
   price: number;
@@ -27,6 +31,10 @@ export default function FormulesSection({ data }: { data: FormulesData }) {
             )}
             <div className="text-4xl sm:text-5xl font-bold text-gradient mb-3">{f.price} €</div>
             <p className="font-medium text-white/80 text-sm leading-relaxed">{f.name}</p>
+            <AddToCartButton
+              item={{ id: f.name, name: f.name, price: f.price }}
+              className="mx-auto mt-4"
+            />
           </div>
         ))}
       </div>

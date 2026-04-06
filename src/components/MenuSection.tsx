@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import AddToCartButton from "./AddToCartButton";
 
 interface MenuItem {
   name: string;
@@ -48,6 +51,10 @@ export default function MenuSection({ title, items, showAccompagnement = false }
                 <span className="absolute bottom-3 right-3 bg-primary/90 backdrop-blur-sm text-dark font-bold px-3 py-1 rounded-xl text-sm">
                   {formatPrice(item.price)}
                 </span>
+                <AddToCartButton
+                  item={{ id: item.name, name: item.name, price: item.price, image: item.image }}
+                  className="absolute top-3 right-3 opacity-0 group-hover:opacity-100"
+                />
               </div>
             )}
             <div className="p-5">
@@ -58,7 +65,13 @@ export default function MenuSection({ title, items, showAccompagnement = false }
                 <p className="text-sm text-white/40 mt-1">{item.accompagnement}</p>
               )}
               {!item.image && (
-                <span className="text-primary font-bold text-lg">{formatPrice(item.price)}</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-primary font-bold text-lg">{formatPrice(item.price)}</span>
+                  <AddToCartButton
+                    item={{ id: item.name, name: item.name, price: item.price }}
+                    className=""
+                  />
+                </div>
               )}
             </div>
           </div>

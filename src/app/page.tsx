@@ -1,3 +1,6 @@
+import { CartProvider } from "@/context/CartContext";
+import CartDrawer from "@/components/CartDrawer";
+import Toast from "@/components/Toast";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import MenuTabs from "@/components/MenuTabs";
@@ -11,7 +14,7 @@ import livraisonData from "@/data/livraison.json";
 
 export default function Home() {
   return (
-    <>
+    <CartProvider>
       <Header />
       <main className="bg-dark">
         <Hero />
@@ -45,6 +48,8 @@ export default function Home() {
       </main>
       <Footer />
       <WhatsAppButton />
-    </>
+      <CartDrawer />
+      <Toast />
+    </CartProvider>
   );
 }
