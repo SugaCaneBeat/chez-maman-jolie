@@ -1,8 +1,8 @@
 [
-  { "name": "Makemba (bananes plantains)", "price": 3 },
-  { "name": "Chikwangue", "price": 3 },
-  { "name": "Frites", "price": 3 },
-  { "name": "Riz", "price": 3 },
-  { "name": "Semoule", "price": 3 },
-  { "name": "Safu x5", "price": 10 }
+  { "name": "Makemba (bananes plantains)", "price": 3, "image": "https://images.unsplash.com/photo-1507835418932-dfcc1a16d393?w=600&q=80" },
+  { "name": "Chikwangue", "price": 3, "image": "https://images.unsplash.com/photo-1551888761-382cd30b5da6?w=600&q=80" },
+  { "name": "Frites", "price": 3, "image": "https://images.unsplash.com/photo-1661081090290-9b66fd49d882?w=600&q=80" },
+  { "name": "Riz", "price": 3, "image": "https://images.unsplash.com/photo-1591467639009-9d018f445f5a?w=600&q=80" },
+  { "name": "Semoule", "price": 3, "image": "https://images.unsplash.com/photo-1626901148200-0e934140a02b?w=600&q=80" },
+  { "name": "Safu x5", "price": 10, "image": "https://images.unsplash.com/photo-1546554137-f86b9593a222?w=600&q=80" }
 ]

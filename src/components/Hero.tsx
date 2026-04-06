@@ -71,9 +71,9 @@ export default function Hero() {
         {/* Featured dishes with real images */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6 max-w-4xl mx-auto animate-fade-in-up animation-delay-500">
           {[
-            { name: "Poulet Muamba", desc: "Pâte d'arachide & riz", price: "10 €", img: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400&q=80" },
-            { name: "Thiéboudiène", desc: "Riz au poisson sénégalais", price: "13 €", img: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&q=80" },
-            { name: "Ngolo Liboké", desc: "Poisson en feuille de bananier", price: "15 €", img: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&q=80" },
+            { name: "Poulet Muamba", desc: "Pâte d'arachide & riz", price: "10 €", img: "https://images.unsplash.com/photo-1591386767153-987783380885?w=400&q=80" },
+            { name: "Thiéboudiène", desc: "Riz au poisson sénégalais", price: "13 €", img: "https://images.unsplash.com/photo-1664993101841-036f189719b6?w=400&q=80" },
+            { name: "Ngolo Liboké", desc: "Poisson en feuille de bananier", price: "15 €", img: "https://images.unsplash.com/photo-1611507775040-6af3f6a18656?w=400&q=80" },
           ].map((dish, i) => (
             <div
               key={dish.name}

@@ -1,5 +1,5 @@
 [
-  { "name": "Pondu", "price": 7 },
-  { "name": "Fumbwa", "price": 7 },
-  { "name": "Légumes verts", "price": 7 }
+  { "name": "Pondu", "price": 7, "image": "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=600&q=80" },
+  { "name": "Fumbwa", "price": 7, "image": "https://images.unsplash.com/photo-1600335895229-6e75511892c8?w=600&q=80" },
+  { "name": "Légumes verts", "price": 7, "image": "https://images.unsplash.com/photo-1605209660425-28a0afbbed8b?w=600&q=80" }
 ]
