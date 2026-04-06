@@ -69,14 +69,21 @@ export default function Header() {
                 </span>
               )}
             </button>
-            <a
-              href="https://wa.me/33744275428"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ml-4 bg-gradient-to-r from-primary to-primary-light hover:from-primary-light hover:to-primary text-dark font-bold px-6 py-2.5 rounded-full text-sm transition-all hover:shadow-lg hover:shadow-primary/25 hover:scale-105"
+            <button
+              onClick={() => {
+                if (count > 0) {
+                  setDrawerOpen(true);
+                } else {
+                  document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" });
+                }
+              }}
+              className="relative ml-4 bg-gradient-to-r from-primary to-primary-light hover:from-primary-light hover:to-primary text-dark font-bold px-6 py-2.5 rounded-full text-sm transition-all hover:shadow-lg hover:shadow-primary/25 hover:scale-105 flex items-center gap-2"
             >
-              Commander
-            </a>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+              {count > 0 ? `Commander (${count})` : "Commander"}
+            </button>
           </nav>
 
           {/* Mobile hamburger */}
@@ -117,15 +124,19 @@ export default function Header() {
               </svg>
               Panier {count > 0 && `(${count})`}
             </button>
-            <a
-              href="https://wa.me/33744275428"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setIsOpen(false)}
-              className="block mt-3 bg-gradient-to-r from-primary to-primary-light text-dark font-bold px-6 py-3.5 rounded-2xl text-sm text-center transition-all"
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                if (count > 0) {
+                  setDrawerOpen(true);
+                } else {
+                  document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" });
+                }
+              }}
+              className="block mt-3 w-full bg-gradient-to-r from-primary to-primary-light text-dark font-bold px-6 py-3.5 rounded-2xl text-sm text-center transition-all"
             >
-              Commander sur WhatsApp
-            </a>
+              {count > 0 ? `Commander (${count} articles)` : "Commander"}
+            </button>
           </nav>
         </div>
       </div>
