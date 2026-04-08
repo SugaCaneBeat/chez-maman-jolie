@@ -1,6 +1,6 @@
 [
-  { "name": "Mafé", "price": 12, "image": "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=600&q=80" },
-  { "name": "Yassa", "price": 12, "image": "https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=600&q=80" },
-  { "name": "Thiéboudiène", "price": 13, "image": "https://images.unsplash.com/photo-1664993101841-036f189719b6?w=600&q=80" },
-  { "name": "Liboke ya mbika (graines de courge)", "price": 16, "image": "https://images.unsplash.com/photo-1621174438159-6a9a82405498?w=600&q=80" }
+  { "name": "Mafé", "price": 12, "image": "https://images.unsplash.com/photo-1640869665730-62bd6bd55023?w=600&q=80" },
+  { "name": "Yassa", "price": 12, "image": "https://images.unsplash.com/photo-1665400808116-f0e6339b7e9a?w=600&q=80" },
+  { "name": "Thiéboudiène", "price": 13, "image": "https://images.unsplash.com/photo-1665332195309-9d75071138f0?w=600&q=80" },
+  { "name": "Liboke ya mbika (graines de courge)", "price": 16, "image": "https://images.unsplash.com/photo-1658372776607-936e37b8d79a?w=600&q=80" }
 ]

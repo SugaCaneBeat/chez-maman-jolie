@@ -1,6 +1,6 @@
 [
-  { "name": "Tiramisu Mangue & Spéculos", "price": 3.30, "image": "https://images.unsplash.com/photo-1623065422902-30a2d299bbe4?w=600&q=80" },
-  { "name": "Panna cotta", "price": 3.50, "image": "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=600&q=80" },
-  { "name": "Häagen-Dazs", "price": 4.00, "image": "https://images.unsplash.com/photo-1515037028865-0a2a82603f7c?w=600&q=80" },
-  { "name": "Salade de fruits", "price": 4.50, "image": "https://images.unsplash.com/photo-1493770348161-369560ae357d?w=600&q=80" }
+  { "name": "Tiramisu Mangue & Spéculos", "price": 3.30, "image": "https://images.unsplash.com/photo-1761637588199-ecd32fea8325?w=600&q=80" },
+  { "name": "Panna cotta", "price": 3.50, "image": "https://images.unsplash.com/photo-1603236268617-d023914d9416?w=600&q=80" },
+  { "name": "Häagen-Dazs", "price": 4.00, "image": "https://images.unsplash.com/photo-1575031745961-1ed57f800a4c?w=600&q=80" },
+  { "name": "Salade de fruits", "price": 4.50, "image": "https://images.unsplash.com/photo-1634504335142-1f112f3f81e8?w=600&q=80" }
 ]
