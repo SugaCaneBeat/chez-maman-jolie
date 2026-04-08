@@ -22,8 +22,7 @@ export default function AdminLogin() {
       if (error) {
         setError("Email ou mot de passe incorrect");
       } else {
-        router.push("/admin");
-        router.refresh();
+        window.location.href = "/admin";
       }
     } catch {
       setError("Erreur de connexion");
