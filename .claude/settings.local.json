@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/user/AppData/Roaming/Claude/local-agent-mode-sessions/skills-plugin/28a487e9-8a32-49bf-97e2-e58d56f6aa69/19637265-baf8-4af2-a0c3-121b55b2487e/skills/docx/**)",
+      "Bash(pandoc \"C:/Users/user/Downloads/CahierDesCharges_ChezMamanJolie.docx\" -o /tmp/cahier.md)",
+      "Bash(python scripts/office/unpack.py \"C:/Users/user/Downloads/CahierDesCharges_ChezMamanJolie.docx\" /tmp/cahier_unpacked/)",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --no-turbopack)",
+      "Bash(npx create-next-app@latest jolie-temp --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --no-turbopack)",
+      "Bash(cp -r \"C:/Users/user/Desktop/Arkancia/Apps/jolie-temp/\"* \"C:/Users/user/Desktop/Arkancia/Apps/Jolie/\")",
+      "Bash(cp -r \"C:/Users/user/Desktop/Arkancia/Apps/jolie-temp/\".* \"C:/Users/user/Desktop/Arkancia/Apps/Jolie/\")",
+      "Bash(rm -rf \"C:/Users/user/Desktop/Arkancia/Apps/jolie-temp\")",
+      "Bash(npm run:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(gh auth:*)",
+      "Bash(where gh:*)",
+      "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")",
+      "mcp__mcp-registry__search_mcp_registry",
+      "Bash(npm list:*)",
+      "Bash(npm install:*)",
+      "Bash(npx vercel:*)",
+      "WebSearch",
+      "WebFetch(domain:unsplash.com)",
+      "Bash(npx supabase:*)",
+      "Bash(SUPABASE_DB_PASSWORD=\"admin access\" npx supabase db query -f scripts/schema.sql --db-url \"postgresql://postgres.qczjisuztjekkjgnqnpl:admin%20access@db.qczjisuztjekkjgnqnpl.supabase.co:5432/postgres\")",
+      "Bash(node -e \":*)",
+      "Bash(node --experimental-global-customevent -e \":*)",
+      "Bash(node scripts/setup-db.mjs)",
+      "Bash(clip)",
+      "Bash(/c/Windows/System32/clip.exe)"
+    ]
+  }
+}
