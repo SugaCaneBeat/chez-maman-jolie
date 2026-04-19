@@ -5,10 +5,43 @@ import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 
 const navItems = [
-  { label: "Accueil", href: "#accueil" },
-  { label: "Carte", href: "#menu" },
-  { label: "Livraison", href: "#livraison" },
-  { label: "Contact", href: "#contact" },
+  {
+    label: "Accueil",
+    href: "#accueil",
+    icon: (
+      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      </svg>
+    ),
+  },
+  {
+    label: "Carte",
+    href: "#menu",
+    icon: (
+      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+      </svg>
+    ),
+  },
+  {
+    label: "Livraison",
+    href: "#livraison",
+    icon: (
+      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10m0 0h10m4 0h1a1 1 0 001-1v-3.65a1 1 0 00-.22-.624l-3.48-4.35A1 1 0 0014.52 6H13" />
+      </svg>
+    ),
+  },
+  {
+    label: "Contact",
+    href: "#contact",
+    icon: (
+      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+    ),
+  },
 ];
 
 export default function Header() {
@@ -50,8 +83,9 @@ export default function Header() {
               <a
                 key={item.href}
                 href={item.href}
-                className="relative text-white/60 hover:text-white transition-all text-sm font-medium tracking-wide px-4 py-2 rounded-[5px] hover:bg-white/5"
+                className="relative flex items-center gap-1.5 text-white/60 hover:text-white transition-all text-sm font-medium tracking-wide px-4 py-2 rounded-[5px] hover:bg-white/5"
               >
+                {item.icon}
                 {item.label}
               </a>
             ))}
@@ -110,8 +144,9 @@ export default function Header() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsOpen(false)}
-                className="block py-3 px-4 text-white/70 hover:text-white hover:bg-white/5 rounded-[5px] transition-all text-sm font-medium tracking-wide"
+                className="flex items-center gap-3 py-3 px-4 text-white/70 hover:text-white hover:bg-white/5 rounded-[5px] transition-all text-sm font-medium tracking-wide"
               >
+                {item.icon}
                 {item.label}
               </a>
             ))}
