@@ -4,7 +4,7 @@ export default function Footer() {
       {/* Decorative gradient */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
 
-      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-16">
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-16 pb-32 md:pb-16">
         <div className="grid sm:grid-cols-3 gap-10 mb-12">
           {/* Brand */}
           <div>

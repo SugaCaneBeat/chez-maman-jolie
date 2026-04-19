@@ -8,6 +8,7 @@ import Livraison from "@/components/Livraison";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import MobileTabBar from "@/components/MobileTabBar";
 import ScrollAnimation from "@/components/ScrollAnimation";
 import { getMenuData } from "@/lib/menu";
 
@@ -53,7 +54,11 @@ export default async function Home() {
         <Contact />
       </main>
       <Footer />
-      <WhatsAppButton />
+      {/* WhatsApp FAB — desktop uniquement */}
+      <div className="hidden md:block">
+        <WhatsAppButton />
+      </div>
+      <MobileTabBar />
       <CartDrawer />
       <Toast />
     </CartProvider>
