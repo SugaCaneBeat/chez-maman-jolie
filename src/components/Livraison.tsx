@@ -1,5 +1,26 @@
 import ScrollAnimation from "./ScrollAnimation";
 
+/* ── 2D step icons ── */
+const STEP_ICONS = [
+  /* cart */
+  <svg key="cart" className="w-8 h-8 sm:w-10 sm:h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+  </svg>,
+  /* chat bubble */
+  <svg key="chat" className="w-8 h-8 sm:w-10 sm:h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+  </svg>,
+  /* check circle */
+  <svg key="check" className="w-8 h-8 sm:w-10 sm:h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>,
+  /* delivery truck */
+  <svg key="truck" className="w-8 h-8 sm:w-10 sm:h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10m0 0h10m4 0h1a1 1 0 001-1v-3.65a1 1 0 00-.22-.624l-3.48-4.35A1 1 0 0014.52 6H13" />
+  </svg>,
+];
+
 interface Zone {
   name: string;
   frais: string;
@@ -24,7 +45,6 @@ interface LivraisonData {
 }
 
 export default function Livraison({ data }: { data: LivraisonData }) {
-  const stepIcons = ["🛒", "💬", "✅", "🚗"];
 
   return (
     <section id="livraison" className="py-20 sm:py-32 relative overflow-hidden">
@@ -51,7 +71,7 @@ export default function Livraison({ data }: { data: LivraisonData }) {
             {data.tunnel.map((s, i) => (
               <div key={s.step} className="text-center group">
                 <div className="w-18 h-18 sm:w-22 sm:h-22 glass rounded-[5px] flex items-center justify-center mx-auto mb-4 group-hover:bg-white/10 group-hover:scale-110 transition-all duration-500">
-                  <span className="text-3xl sm:text-4xl">{stepIcons[i]}</span>
+                  {STEP_ICONS[i]}
                 </div>
                 <div className="text-[10px] text-primary font-bold uppercase tracking-widest mb-1">
                   &Eacute;tape {s.step}
@@ -87,17 +107,29 @@ export default function Livraison({ data }: { data: LivraisonData }) {
         <ScrollAnimation delay={300}>
           <div className="grid sm:grid-cols-3 gap-4">
             <div className="glass rounded-[5px] p-6 text-center hover:bg-white/8 transition-all">
-              <div className="text-3xl mb-3">💰</div>
+              <div className="flex justify-center mb-3">
+                <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
               <h4 className="text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Minimum</h4>
               <p className="text-primary font-bold text-2xl">{data.minimum}</p>
             </div>
             <div className="glass rounded-[5px] p-6 text-center hover:bg-white/8 transition-all">
-              <div className="text-3xl mb-3">💳</div>
+              <div className="flex justify-center mb-3">
+                <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+              </div>
               <h4 className="text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Paiement</h4>
               <p className="text-white/60 text-sm">{data.paiement.join(" · ")}</p>
             </div>
             <div className="glass rounded-[5px] p-6 text-center hover:bg-white/8 transition-all">
-              <div className="text-3xl mb-3">🕐</div>
+              <div className="flex justify-center mb-3">
+                <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
               <h4 className="text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Horaires</h4>
               <p className="text-white/60 text-xs leading-relaxed">
                 {data.horaires.semaine.jours} : {data.horaires.semaine.heures}
