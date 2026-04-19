@@ -26,7 +26,9 @@
       "Bash(node --experimental-global-customevent -e \":*)",
       "Bash(node scripts/setup-db.mjs)",
       "Bash(clip)",
-      "Bash(/c/Windows/System32/clip.exe)"
+      "Bash(/c/Windows/System32/clip.exe)",
+      "Bash(node scripts/setup-storage.mjs)",
+      "Bash(node scripts/apply-storage-policies.mjs)"
     ]
   }
 }

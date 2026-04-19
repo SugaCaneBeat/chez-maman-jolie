@@ -56,3 +56,36 @@ export async function deleteMenuItem(id: string) {
 export async function toggleItemAvailability(id: string, available: boolean) {
   return updateMenuItem(id, { available });
 }
+
+export async function uploadMenuImage(formData: FormData) {
+  const file = formData.get("file") as File | null;
+  const itemName = (formData.get("itemName") as string) || "item";
+
+  if (!file) return { success: false, error: "Aucun fichier" };
+  if (!file.type.startsWith("image/")) return { success: false, error: "Fichier non image" };
+  if (file.size > 5 * 1024 * 1024) return { success: false, error: "Image trop lourde (max 5MB)" };
+
+  const supabase = createServerClient();
+
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const safeName = itemName.toLowerCase()
+    .replace(/[^a-z0-9]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "") || "item";
+  const fileName = `${safeName}-${Date.now()}.${ext}`;
+
+  const bytes = await file.arrayBuffer();
+
+  const { error: uploadErr } = await supabase.storage
+    .from("menu-images")
+    .upload(fileName, bytes, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: file.type,
+    });
+
+  if (uploadErr) return { success: false, error: uploadErr.message };
+
+  const { data } = supabase.storage.from("menu-images").getPublicUrl(fileName);
+  return { success: true, url: data.publicUrl };
+}
