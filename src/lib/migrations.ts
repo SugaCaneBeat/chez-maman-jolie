@@ -22,6 +22,16 @@ const MIGRATIONS: Array<{ label: string; sql: string }> = [
     label: "menu_items.is_specialite",
     sql: "ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS is_specialite BOOLEAN NOT NULL DEFAULT FALSE;",
   },
+  {
+    label: "formule_components",
+    sql: `CREATE TABLE IF NOT EXISTS formule_components (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  formule_id UUID NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+  menu_item_id UUID NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+  component_type TEXT NOT NULL,
+  display_order INTEGER DEFAULT 0
+);`,
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────

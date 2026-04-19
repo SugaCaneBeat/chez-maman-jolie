@@ -30,6 +30,16 @@ const migrations = [
     label: "menu_items.is_specialite (BOOLEAN DEFAULT FALSE)",
     sql: "ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS is_specialite BOOLEAN NOT NULL DEFAULT FALSE;",
   },
+  {
+    label: "formule_components (table)",
+    sql: `CREATE TABLE IF NOT EXISTS formule_components (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  formule_id UUID NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+  menu_item_id UUID NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+  component_type TEXT NOT NULL,
+  display_order INTEGER DEFAULT 0
+);`,
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────
