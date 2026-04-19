@@ -39,9 +39,9 @@ export default function AdminLogin() {
           <p className="text-white/40 text-sm mt-1">Administration</p>
         </div>
 
-        <form onSubmit={handleLogin} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 space-y-4">
+        <form onSubmit={handleLogin} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[5px] p-6 space-y-4">
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm">
+            <div className="bg-red-500/10 border border-red-500/20 rounded-[5px] px-4 py-3 text-red-400 text-sm">
               {error}
             </div>
           )}
@@ -52,7 +52,7 @@ export default function AdminLogin() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#C9922A]/50"
+              className="w-full bg-white/5 border border-white/10 rounded-[5px] px-4 py-3 text-white text-sm focus:outline-none focus:border-[#C9922A]/50"
               required
             />
           </div>
@@ -63,7 +63,7 @@ export default function AdminLogin() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#C9922A]/50"
+              className="w-full bg-white/5 border border-white/10 rounded-[5px] px-4 py-3 text-white text-sm focus:outline-none focus:border-[#C9922A]/50"
               required
             />
           </div>
@@ -71,7 +71,7 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#C9922A] hover:bg-[#E0AD4A] text-[#111008] font-bold py-3 rounded-xl text-sm transition-colors disabled:opacity-50"
+            className="w-full bg-[#C9922A] hover:bg-[#E0AD4A] text-[#111008] font-bold py-3 rounded-[5px] text-sm transition-colors disabled:opacity-50"
           >
             {loading ? "Connexion..." : "Se connecter"}
           </button>

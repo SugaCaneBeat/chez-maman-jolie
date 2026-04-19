@@ -97,14 +97,14 @@ export default function ItemForm({
           <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">Nom *</label>
           <input
             type="text" value={name} onChange={e => setName(e.target.value)} required
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#C9922A]"
+            className="w-full border border-gray-200 rounded-[5px] px-3 py-2 text-sm focus:outline-none focus:border-[#C9922A]"
           />
         </div>
         <div>
           <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">Prix (€) *</label>
           <input
             type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} required
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#C9922A]"
+            className="w-full border border-gray-200 rounded-[5px] px-3 py-2 text-sm focus:outline-none focus:border-[#C9922A]"
           />
         </div>
       </div>
@@ -115,7 +115,7 @@ export default function ItemForm({
           value={categoryId}
           onChange={e => setCategoryId(e.target.value)}
           required
-          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#C9922A] bg-white"
+          className="w-full border border-gray-200 rounded-[5px] px-3 py-2 text-sm focus:outline-none focus:border-[#C9922A] bg-white"
         >
           {categories.map(c => (
             <option key={c.id} value={c.id}>
@@ -130,7 +130,7 @@ export default function ItemForm({
         <label className="block text-xs text-gray-500 uppercase tracking-wider mb-2">Photo</label>
         <div className="flex items-start gap-4">
           {/* Preview */}
-          <div className="relative w-32 h-32 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 border-2 border-dashed border-gray-200">
+          <div className="relative w-32 h-32 rounded-[5px] overflow-hidden bg-gray-100 flex-shrink-0 border-2 border-dashed border-gray-200">
             {image ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -142,7 +142,7 @@ export default function ItemForm({
                 <button
                   type="button"
                   onClick={() => setImage("")}
-                  className="absolute top-1 right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs"
+                  className="absolute top-1 right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-[5px] flex items-center justify-center text-xs"
                   aria-label="Supprimer"
                 >
                   ×
@@ -169,7 +169,7 @@ export default function ItemForm({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-4 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-4 py-2.5 rounded-[5px] text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {uploading ? (
                 <>
@@ -194,7 +194,7 @@ export default function ItemForm({
               type="url"
               value={image}
               onChange={e => setImage(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#C9922A]"
+              className="w-full border border-gray-200 rounded-[5px] px-3 py-2 text-xs focus:outline-none focus:border-[#C9922A]"
               placeholder="https://..."
             />
             {uploadError && <p className="text-xs text-red-500">{uploadError}</p>}
@@ -207,7 +207,7 @@ export default function ItemForm({
           <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">Accompagnement</label>
           <input
             type="text" value={accompagnement} onChange={e => setAccompagnement(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#C9922A]"
+            className="w-full border border-gray-200 rounded-[5px] px-3 py-2 text-sm focus:outline-none focus:border-[#C9922A]"
             placeholder="Riz, banane plantain..."
           />
         </div>
@@ -215,7 +215,7 @@ export default function ItemForm({
           <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">Badge</label>
           <input
             type="text" value={badge} onChange={e => setBadge(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#C9922A]"
+            className="w-full border border-gray-200 rounded-[5px] px-3 py-2 text-sm focus:outline-none focus:border-[#C9922A]"
             placeholder="Sam. & Dim."
           />
         </div>
@@ -225,7 +225,7 @@ export default function ItemForm({
         <button
           type="submit"
           disabled={uploading}
-          className="bg-[#C9922A] text-[#111008] font-bold px-5 py-2 rounded-xl text-sm hover:bg-[#E0AD4A] transition-colors disabled:opacity-50"
+          className="bg-[#C9922A] text-[#111008] font-bold px-5 py-2 rounded-[5px] text-sm hover:bg-[#E0AD4A] transition-colors disabled:opacity-50"
         >
           {item ? "Enregistrer" : "Ajouter"}
         </button>

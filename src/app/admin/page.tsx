@@ -28,19 +28,19 @@ export default async function AdminDashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-[5px] p-5 shadow-sm border border-gray-100">
           <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Commandes du jour</p>
           <p className="text-3xl font-bold text-gray-900">{stats.todayOrderCount}</p>
         </div>
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-[5px] p-5 shadow-sm border border-gray-100">
           <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Chiffre du jour</p>
           <p className="text-3xl font-bold text-[#C9922A]">{formatPrice(stats.todayRevenue)}</p>
         </div>
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-[5px] p-5 shadow-sm border border-gray-100">
           <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">En attente</p>
           <p className="text-3xl font-bold text-yellow-600">{stats.pendingOrders}</p>
         </div>
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-[5px] p-5 shadow-sm border border-gray-100">
           <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Plats au menu</p>
           <p className="text-3xl font-bold text-gray-900">{stats.totalMenuItems}</p>
           {stats.unavailableItems > 0 && (
@@ -50,7 +50,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Recent orders */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-[5px] shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className="font-bold text-gray-900">Commandes récentes</h2>
         </div>
@@ -65,7 +65,7 @@ export default async function AdminDashboard() {
                   <span className="text-gray-400 text-sm ml-3">{order.customer_name || "Client"}</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${statusLabels[order.status]?.color || "bg-gray-100"}`}>
+                  <span className={`px-2.5 py-1 rounded-[5px] text-[10px] font-bold uppercase ${statusLabels[order.status]?.color || "bg-gray-100"}`}>
                     {statusLabels[order.status]?.label || order.status}
                   </span>
                   <span className="font-bold text-[#C9922A]">{formatPrice(Number(order.total))}</span>

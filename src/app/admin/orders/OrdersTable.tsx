@@ -56,7 +56,7 @@ export default function OrdersTable({ initialOrders }: { initialOrders: Order[] 
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
         <button
           onClick={() => setFilter("all")}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${filter === "all" ? "bg-[#C9922A] text-[#111008]" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+          className={`px-3 py-1.5 rounded-[5px] text-xs font-medium transition-colors ${filter === "all" ? "bg-[#C9922A] text-[#111008]" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
         >
           Toutes ({orders.length})
         </button>
@@ -67,7 +67,7 @@ export default function OrdersTable({ initialOrders }: { initialOrders: Order[] 
             <button
               key={s.value}
               onClick={() => setFilter(s.value)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${filter === s.value ? "bg-[#C9922A] text-[#111008]" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+              className={`px-3 py-1.5 rounded-[5px] text-xs font-medium transition-colors ${filter === s.value ? "bg-[#C9922A] text-[#111008]" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
             >
               {s.label} ({count})
             </button>
@@ -76,7 +76,7 @@ export default function OrdersTable({ initialOrders }: { initialOrders: Order[] 
       </div>
 
       {/* Orders */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-[5px] border border-gray-100 overflow-hidden">
         {filteredOrders.length === 0 ? (
           <div className="p-8 text-center text-gray-400">Aucune commande</div>
         ) : (
@@ -97,7 +97,7 @@ export default function OrdersTable({ initialOrders }: { initialOrders: Order[] 
                       value={order.status}
                       onChange={(e) => { e.stopPropagation(); handleStatusChange(order.id, e.target.value); }}
                       onClick={(e) => e.stopPropagation()}
-                      className={`px-2 py-1 rounded-lg text-xs font-bold border-0 cursor-pointer ${
+                      className={`px-2 py-1 rounded-[5px] text-xs font-bold border-0 cursor-pointer ${
                         statusOptions.find(s => s.value === order.status)?.color || "bg-gray-100"
                       }`}
                     >

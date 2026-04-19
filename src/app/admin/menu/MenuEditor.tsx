@@ -108,7 +108,7 @@ export default function MenuEditor({
   };
 
   return (
-    <div className="flex gap-0 min-h-[600px] bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+    <div className="flex gap-0 min-h-[600px] bg-white rounded-[5px] border border-gray-100 overflow-hidden shadow-sm">
 
       {/* ═══════════════════════════════════
           SIDEBAR CATÉGORIES
@@ -125,26 +125,26 @@ export default function MenuEditor({
             const count      = itemCount(cat.id);
 
             if (isEditing) return (
-              <div key={cat.id} className="rounded-xl border border-[#C9922A] bg-amber-50 p-2 space-y-1.5">
+              <div key={cat.id} className="rounded-[5px] border border-[#C9922A] bg-amber-50 p-2 space-y-1.5">
                 <div className="flex gap-1">
                   <input value={editCatIcon} onChange={e => setEditCatIcon(e.target.value)}
-                    placeholder="🍽️" className="w-10 border border-gray-200 rounded-lg px-1.5 py-1 text-sm text-center focus:outline-none focus:border-[#C9922A]" />
+                    placeholder="🍽️" className="w-10 border border-gray-200 rounded-[5px] px-1.5 py-1 text-sm text-center focus:outline-none focus:border-[#C9922A]" />
                   <input value={editCatName} onChange={e => setEditCatName(e.target.value)}
                     placeholder="Nom" autoFocus
-                    className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-[#C9922A]" />
+                    className="flex-1 border border-gray-200 rounded-[5px] px-2 py-1 text-xs focus:outline-none focus:border-[#C9922A]" />
                 </div>
                 <div className="flex gap-1">
                   <button onClick={() => saveEditCat(cat.id)}
-                    className="flex-1 bg-[#C9922A] text-white text-xs font-bold py-1 rounded-lg hover:bg-[#b8831f]">✓</button>
+                    className="flex-1 bg-[#C9922A] text-white text-xs font-bold py-1 rounded-[5px] hover:bg-[#b8831f]">✓</button>
                   <button onClick={cancelEditCat}
-                    className="flex-1 text-gray-400 text-xs py-1 rounded-lg hover:bg-gray-100">✕</button>
+                    className="flex-1 text-gray-400 text-xs py-1 rounded-[5px] hover:bg-gray-100">✕</button>
                 </div>
               </div>
             );
 
             return (
               <div key={cat.id}
-                className={`group flex items-center gap-1.5 rounded-xl px-2 py-1.5 cursor-pointer transition-colors ${
+                className={`group flex items-center gap-1.5 rounded-[5px] px-2 py-1.5 cursor-pointer transition-colors ${
                   isSelected ? "bg-[#C9922A] text-[#111008]" : "hover:bg-gray-50 text-gray-700"
                 } ${!cat.active ? "opacity-50" : ""}`}
                 onClick={() => { setSelectedCat(cat.id); setShowForm(false); }}
@@ -154,7 +154,7 @@ export default function MenuEditor({
                 <span className={`flex-1 text-xs font-medium truncate ${isSelected ? "font-bold" : ""}`}>{cat.name}</span>
 
                 {/* Compteur articles */}
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-[5px] ${
                   isSelected ? "bg-black/10 text-[#111008]" : "bg-gray-100 text-gray-400"
                 }`}>{count}</span>
 
@@ -187,25 +187,25 @@ export default function MenuEditor({
         {/* Nouvelle catégorie */}
         <div className="px-2 py-2 border-t border-gray-100">
           {showNewCat ? (
-            <div className="rounded-xl border border-[#C9922A] bg-amber-50 p-2 space-y-1.5">
+            <div className="rounded-[5px] border border-[#C9922A] bg-amber-50 p-2 space-y-1.5">
               <div className="flex gap-1">
                 <input value={newCatIcon} onChange={e => setNewCatIcon(e.target.value)}
-                  placeholder="🍽️" className="w-10 border border-gray-200 rounded-lg px-1.5 py-1 text-sm text-center focus:outline-none focus:border-[#C9922A]" />
+                  placeholder="🍽️" className="w-10 border border-gray-200 rounded-[5px] px-1.5 py-1 text-sm text-center focus:outline-none focus:border-[#C9922A]" />
                 <input value={newCatName} onChange={e => setNewCatName(e.target.value)}
                   placeholder="Nom…" autoFocus
                   onKeyDown={e => e.key === "Enter" && handleCreateCat()}
-                  className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-[#C9922A]" />
+                  className="flex-1 border border-gray-200 rounded-[5px] px-2 py-1 text-xs focus:outline-none focus:border-[#C9922A]" />
               </div>
               <div className="flex gap-1">
                 <button onClick={handleCreateCat}
-                  className="flex-1 bg-[#C9922A] text-white text-xs font-bold py-1 rounded-lg hover:bg-[#b8831f]">Créer</button>
+                  className="flex-1 bg-[#C9922A] text-white text-xs font-bold py-1 rounded-[5px] hover:bg-[#b8831f]">Créer</button>
                 <button onClick={() => { setShowNewCat(false); setNewCatName(""); setNewCatIcon(""); }}
-                  className="flex-1 text-gray-400 text-xs py-1 rounded-lg hover:bg-gray-100">Annuler</button>
+                  className="flex-1 text-gray-400 text-xs py-1 rounded-[5px] hover:bg-gray-100">Annuler</button>
               </div>
             </div>
           ) : (
             <button onClick={() => setShowNewCat(true)}
-              className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-xl text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-50 border border-dashed border-gray-200 transition-colors">
+              className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-[5px] text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-50 border border-dashed border-gray-200 transition-colors">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
               Nouvelle catégorie
             </button>
@@ -229,7 +229,7 @@ export default function MenuEditor({
           </div>
           <button
             onClick={() => { setEditingItem(null); setShowForm(v => !v); }}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-[5px] text-sm font-bold transition-colors ${
               showForm ? "bg-gray-100 text-gray-600" : "bg-[#C9922A] text-[#111008] hover:bg-[#E0AD4A]"
             }`}
           >
@@ -274,7 +274,7 @@ export default function MenuEditor({
               <div key={item.id} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors group">
 
                 {/* Photo */}
-                <div className="w-12 h-12 flex-shrink-0 rounded-xl overflow-hidden bg-gray-100 border border-gray-100">
+                <div className="w-12 h-12 flex-shrink-0 rounded-[5px] overflow-hidden bg-gray-100 border border-gray-100">
                   {item.image
                     ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                     : <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">—</div>
@@ -286,7 +286,7 @@ export default function MenuEditor({
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="font-semibold text-gray-900 text-sm truncate">{item.name}</span>
                     {item.badge && (
-                      <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-red-50 text-red-500 uppercase tracking-wide flex-shrink-0">{item.badge}</span>
+                      <span className="px-1.5 py-0.5 rounded-[5px] text-[9px] font-bold bg-red-50 text-red-500 uppercase tracking-wide flex-shrink-0">{item.badge}</span>
                     )}
                   </div>
                   {item.accompagnement && (
@@ -302,7 +302,7 @@ export default function MenuEditor({
                   <button
                     onClick={() => handleToggleSpe(item.id, !item.is_specialite)}
                     title={item.is_specialite ? "Retirer des Spécialités" : "Marquer comme Spécialité"}
-                    className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-all ${
+                    className={`flex items-center gap-1 px-2 py-1 rounded-[5px] text-xs font-medium transition-all ${
                       item.is_specialite
                         ? "bg-amber-50 text-amber-500 border border-amber-200"
                         : "bg-gray-50 text-gray-300 border border-gray-100 hover:text-amber-400 hover:border-amber-200"
@@ -328,14 +328,14 @@ export default function MenuEditor({
                   <button
                     onClick={() => { setEditingItem(item); setShowForm(true); }}
                     title="Modifier"
-                    className="p-1.5 rounded-lg text-gray-300 hover:text-[#C9922A] hover:bg-amber-50 transition-colors"
+                    className="p-1.5 rounded-[5px] text-gray-300 hover:text-[#C9922A] hover:bg-amber-50 transition-colors"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                   </button>
                   <button
                     onClick={() => handleDelete(item.id)}
                     title="Supprimer"
-                    className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    className="p-1.5 rounded-[5px] text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                   </button>
