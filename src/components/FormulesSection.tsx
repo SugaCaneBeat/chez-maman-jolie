@@ -4,10 +4,11 @@ import AddToCartButton from "./AddToCartButton";
 import type { FormulesData, Formule } from "@/lib/menu";
 
 const COMPONENT_LABELS: Record<string, string> = {
-  entree:  "Entrée",
-  plat:    "Plat",
-  dessert: "Dessert",
-  boisson: "Boisson",
+  entree:         "Entrée",
+  plat:           "Plat",
+  accompagnement: "Accompagnement",
+  dessert:        "Dessert",
+  boisson:        "Boisson",
 };
 
 /* ── CSS collage when no generated image ── */

@@ -18,16 +18,17 @@ interface Props {
   categoryName: string;
 }
 
-type ComponentKey = "entree" | "plat" | "dessert" | "boisson";
+type ComponentKey = "entree" | "plat" | "accompagnement" | "dessert" | "boisson";
 
 const COMPONENT_LABELS: Record<ComponentKey, string> = {
-  entree:  "Entrée",
-  plat:    "Plat",
-  dessert: "Dessert",
-  boisson: "Boisson",
+  entree:          "Entrée",
+  plat:            "Plat",
+  accompagnement:  "Accompagnement",
+  dessert:         "Dessert",
+  boisson:         "Boisson",
 };
 
-const COMPONENT_KEYS: ComponentKey[] = ["entree", "plat", "dessert", "boisson"];
+const COMPONENT_KEYS: ComponentKey[] = ["entree", "plat", "accompagnement", "dessert", "boisson"];
 
 interface FormState {
   name: string;
@@ -127,9 +128,10 @@ export default function FormuleEditor({ categoryId, categoryName }: Props) {
   const [pickerItems, setPickerItems] = useState<{
     entrees: PickerItem[];
     plats: PickerItem[];
+    accompagnements: PickerItem[];
     desserts: PickerItem[];
     boissons: PickerItem[];
-  }>({ entrees: [], plats: [], desserts: [], boissons: [] });
+  }>({ entrees: [], plats: [], accompagnements: [], desserts: [], boissons: [] });
   const [loading, setLoading]           = useState(true);
   const [editingFormule, setEditingFormule] = useState<FormuleWithComponents | null | "new">(null);
   const [form, setForm]                 = useState<FormState>(emptyForm());
@@ -150,9 +152,10 @@ export default function FormuleEditor({ categoryId, categoryName }: Props) {
 
   /* ── helpers ── */
   const pickerForKey = (key: ComponentKey): PickerItem[] => {
-    if (key === "entree")  return pickerItems.entrees;
-    if (key === "plat")    return pickerItems.plats;
-    if (key === "dessert") return pickerItems.desserts;
+    if (key === "entree")         return pickerItems.entrees;
+    if (key === "plat")           return pickerItems.plats;
+    if (key === "accompagnement") return pickerItems.accompagnements;
+    if (key === "dessert")        return pickerItems.desserts;
     return pickerItems.boissons;
   };
 
@@ -344,12 +347,15 @@ export default function FormuleEditor({ categoryId, categoryName }: Props) {
           {/* Component selects */}
           <div>
             <p className="text-xs font-semibold text-gray-500 mb-2">Composition</p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
               {COMPONENT_KEYS.map(key => {
                 const list = pickerForKey(key);
+                const isAccomp = key === "accompagnement";
                 return (
-                  <div key={key}>
-                    <label className="block text-xs text-gray-400 mb-1">{COMPONENT_LABELS[key]}</label>
+                  <div key={key} className={`flex items-center gap-3 ${isAccomp ? "pl-5 border-l-2 border-[#C9922A]/30" : ""}`}>
+                    <label className={`text-xs flex-shrink-0 w-28 ${isAccomp ? "text-[#C9922A]/70" : "text-gray-500 font-semibold"}`}>
+                      {isAccomp ? "└ Accompagnement" : COMPONENT_LABELS[key]}
+                    </label>
                     <select
                       value={form.components[key] || ""}
                       onChange={e =>
@@ -358,9 +364,9 @@ export default function FormuleEditor({ categoryId, categoryName }: Props) {
                           components: { ...p.components, [key]: e.target.value || undefined },
                         }))
                       }
-                      className="w-full border border-gray-200 rounded-[5px] px-2 py-2 text-sm focus:outline-none focus:border-[#C9922A] text-gray-900 bg-white"
+                      className="flex-1 border border-gray-200 rounded-[5px] px-2 py-2 text-sm focus:outline-none focus:border-[#C9922A] text-gray-900 bg-white"
                     >
-                      <option value="">— Aucun —</option>
+                      <option value="">{isAccomp ? "— Aucun —" : "— Aucun —"}</option>
                       {list.map(item => (
                         <option key={item.id} value={item.id}>{item.name}</option>
                       ))}

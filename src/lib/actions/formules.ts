@@ -29,12 +29,12 @@ export interface FormuleWithComponents {
 export async function getMenuItemsForPicker(): Promise<{
   entrees: PickerItem[];
   plats: PickerItem[];
+  accompagnements: PickerItem[];
   desserts: PickerItem[];
   boissons: PickerItem[];
 }> {
   const supabase = createServerClient();
 
-  // Fetch all categories once
   const { data: cats } = await supabase
     .from("categories")
     .select("id, slug")
@@ -46,58 +46,36 @@ export async function getMenuItemsForPicker(): Promise<{
 
   const platSlugs = ["viandes", "poissons", "mijotes", "legumes", "specialites"];
 
-  // entrees
-  const entreeIds = catBySlug["entrees"] ? [catBySlug["entrees"]] : [];
-  const platIds   = platSlugs.map(s => catBySlug[s]).filter(Boolean) as string[];
-  const dessertIds = catBySlug["desserts"] ? [catBySlug["desserts"]] : [];
+  const entreeIds       = catBySlug["entrees"]        ? [catBySlug["entrees"]]        : [];
+  const platIds         = platSlugs.map(s => catBySlug[s]).filter(Boolean) as string[];
+  const accompIds       = catBySlug["accompagnements"] ? [catBySlug["accompagnements"]] : [];
+  const dessertIds      = catBySlug["desserts"]        ? [catBySlug["desserts"]]        : [];
 
-  const [entreesRes, platsRes, dessertsRes, boissonsRes] = await Promise.all([
-    entreeIds.length
-      ? supabase
-          .from("menu_items")
-          .select("id, name, image")
-          .in("category_id", entreeIds)
-          .eq("available", true)
-          .order("display_order")
-      : Promise.resolve({ data: [] }),
+  const fetchItems = (ids: string[]) =>
+    ids.length
+      ? supabase.from("menu_items").select("id, name, image")
+          .in("category_id", ids).eq("available", true).order("display_order")
+      : Promise.resolve({ data: [] });
 
-    platIds.length
-      ? supabase
-          .from("menu_items")
-          .select("id, name, image")
-          .in("category_id", platIds)
-          .eq("available", true)
-          .order("display_order")
-      : Promise.resolve({ data: [] }),
-
-    dessertIds.length
-      ? supabase
-          .from("menu_items")
-          .select("id, name, image")
-          .in("category_id", dessertIds)
-          .eq("available", true)
-          .order("display_order")
-      : Promise.resolve({ data: [] }),
-
-    supabase
-      .from("menu_items")
-      .select("id, name, image")
-      .not("boisson_subcategory_id", "is", null)
-      .eq("available", true)
-      .order("display_order"),
+  const [entreesRes, platsRes, accompRes, dessertsRes, boissonsRes] = await Promise.all([
+    fetchItems(entreeIds),
+    fetchItems(platIds),
+    fetchItems(accompIds),
+    fetchItems(dessertIds),
+    supabase.from("menu_items").select("id, name, image")
+      .not("boisson_subcategory_id", "is", null).eq("available", true).order("display_order"),
   ]);
 
   const toItem = (r: { id: string; name: string; image?: string | null }): PickerItem => ({
-    id: r.id,
-    name: r.name,
-    image: r.image ?? null,
+    id: r.id, name: r.name, image: r.image ?? null,
   });
 
   return {
-    entrees:  (entreesRes.data  || []).map(toItem),
-    plats:    (platsRes.data    || []).map(toItem),
-    desserts: (dessertsRes.data || []).map(toItem),
-    boissons: (boissonsRes.data || []).map(toItem),
+    entrees:         (entreesRes.data  || []).map(toItem),
+    plats:           (platsRes.data    || []).map(toItem),
+    accompagnements: (accompRes.data   || []).map(toItem),
+    desserts:        (dessertsRes.data || []).map(toItem),
+    boissons:        (boissonsRes.data || []).map(toItem),
   };
 }
 
