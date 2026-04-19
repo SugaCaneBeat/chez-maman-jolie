@@ -35,9 +35,15 @@ export async function updateMenuItem(id: string, data: {
   accompagnement?: string;
   badge?: string;
   available?: boolean;
+  categoryId?: string;
 }) {
   const supabase = createServerClient();
-  const { error } = await supabase.from("menu_items").update(data).eq("id", id);
+  const payload: Record<string, unknown> = { ...data };
+  if (data.categoryId !== undefined) {
+    payload.category_id = data.categoryId;
+    delete payload.categoryId;
+  }
+  const { error } = await supabase.from("menu_items").update(payload).eq("id", id);
   if (error) return { success: false, error: error.message };
   revalidatePath("/admin/menu");
   revalidatePath("/");

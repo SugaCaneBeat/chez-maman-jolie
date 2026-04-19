@@ -9,15 +9,26 @@ interface Item {
   image?: string | null;
   accompagnement?: string | null;
   badge?: string | null;
+  category_id?: string;
+}
+
+interface CategoryOption {
+  id: string;
+  name: string;
+  icon: string;
 }
 
 export default function ItemForm({
   item,
+  categories,
+  currentCategoryId,
   onSave,
   onCancel,
 }: {
   item: Item | null;
-  onSave: (data: { name: string; price: number; image?: string; accompagnement?: string; badge?: string }) => void;
+  categories: CategoryOption[];
+  currentCategoryId: string;
+  onSave: (data: { name: string; price: number; image?: string; accompagnement?: string; badge?: string; categoryId: string }) => void;
   onCancel: () => void;
 }) {
   const [name, setName] = useState(item?.name || "");
@@ -25,6 +36,7 @@ export default function ItemForm({
   const [image, setImage] = useState(item?.image || "");
   const [accompagnement, setAccompagnement] = useState(item?.accompagnement || "");
   const [badge, setBadge] = useState(item?.badge || "");
+  const [categoryId, setCategoryId] = useState(item?.category_id || currentCategoryId);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -72,6 +84,7 @@ export default function ItemForm({
       image: image || undefined,
       accompagnement: accompagnement || undefined,
       badge: badge || undefined,
+      categoryId,
     });
   };
 
@@ -79,8 +92,8 @@ export default function ItemForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <h3 className="font-bold text-gray-900">{item ? "Modifier" : "Ajouter"} un article</h3>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="col-span-2">
           <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">Nom *</label>
           <input
             type="text" value={name} onChange={e => setName(e.target.value)} required
@@ -94,6 +107,22 @@ export default function ItemForm({
             className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#C9922A]"
           />
         </div>
+      </div>
+
+      <div>
+        <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">Categorie *</label>
+        <select
+          value={categoryId}
+          onChange={e => setCategoryId(e.target.value)}
+          required
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#C9922A] bg-white"
+        >
+          {categories.map(c => (
+            <option key={c.id} value={c.id}>
+              {c.icon} {c.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Photo upload */}

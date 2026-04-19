@@ -42,14 +42,28 @@ export default function MenuEditor({ initialCategories, initialItems }: { initia
     await deleteMenuItem(id);
   };
 
-  const handleSave = async (data: { name: string; price: number; image?: string; accompagnement?: string; badge?: string }) => {
+  const handleSave = async (data: { name: string; price: number; image?: string; accompagnement?: string; badge?: string; categoryId: string }) => {
     if (editingItem) {
       await updateMenuItem(editingItem.id, data);
-      setItems(prev => prev.map(i => i.id === editingItem.id ? { ...i, ...data, image: data.image || null, accompagnement: data.accompagnement || null, badge: data.badge || null } : i));
+      setItems(prev => prev.map(i => i.id === editingItem.id ? {
+        ...i,
+        name: data.name,
+        price: data.price,
+        image: data.image || null,
+        accompagnement: data.accompagnement || null,
+        badge: data.badge || null,
+        category_id: data.categoryId,
+      } : i));
     } else {
-      const result = await createMenuItem({ categoryId: selectedCat, ...data });
+      const result = await createMenuItem({
+        categoryId: data.categoryId,
+        name: data.name,
+        price: data.price,
+        image: data.image,
+        accompagnement: data.accompagnement,
+        badge: data.badge,
+      });
       if (result.success) {
-        // Reload items from server after create
         window.location.reload();
       }
     }
@@ -94,6 +108,8 @@ export default function MenuEditor({ initialCategories, initialItems }: { initia
           <div className="mb-6 bg-white rounded-2xl border border-gray-200 p-6">
             <ItemForm
               item={editingItem}
+              categories={initialCategories.map(c => ({ id: c.id, name: c.name, icon: c.icon }))}
+              currentCategoryId={selectedCat}
               onSave={handleSave}
               onCancel={() => { setShowForm(false); setEditingItem(null); }}
             />
