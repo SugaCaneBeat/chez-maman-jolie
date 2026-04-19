@@ -22,10 +22,10 @@ export default function FormulesSection({ data }: { data: FormulesData }) {
         {data.formules.map((f, i) => (
           <div
             key={f.name}
-            className={`glass rounded-3xl p-8 text-center hover:bg-white/10 transition-all duration-500 hover:scale-[1.03] hover:shadow-2xl hover:shadow-primary/10 ${i === 1 ? 'sm:-translate-y-3 ring-2 ring-primary/30' : ''}`}
+            className={`glass rounded-[5px] p-8 text-center hover:bg-white/10 transition-all duration-500 hover:scale-[1.03] hover:shadow-2xl hover:shadow-primary/10 ${i === 1 ? 'sm:-translate-y-3 ring-2 ring-primary/30' : ''}`}
           >
             {i === 1 && (
-              <span className="inline-block bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-4">
+              <span className="inline-block bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-[5px] mb-4">
                 Populaire
               </span>
             )}

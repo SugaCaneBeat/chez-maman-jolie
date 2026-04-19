@@ -27,7 +27,7 @@ export default function BoissonsSection({ data }: { data: BoissonsData }) {
       </h3>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {data.categories.map((cat) => (
-          <div key={cat.name} className="glass rounded-3xl overflow-hidden hover:bg-white/10 transition-all duration-500 hover:scale-[1.02]">
+          <div key={cat.name} className="glass rounded-[5px] overflow-hidden hover:bg-white/10 transition-all duration-500 hover:scale-[1.02]">
             {cat.image && (
               <div className="relative h-36 img-zoom">
                 <Image src={cat.image} alt={cat.name} fill className="object-cover" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />

@@ -28,7 +28,7 @@ export default function AddToCartButton({ item, className = "" }: AddToCartButto
   return (
     <button
       onClick={handleClick}
-      className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 ${
+      className={`w-9 h-9 rounded-[5px] flex items-center justify-center transition-all duration-300 ${
         clicked
           ? "bg-primary scale-110"
           : "bg-white/10 hover:bg-primary/80 backdrop-blur-sm"

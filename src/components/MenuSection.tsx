@@ -31,7 +31,7 @@ export default function MenuSection({ title, items, showAccompagnement = false }
         {items.map((item) => (
           <div
             key={item.name}
-            className="group glass rounded-3xl overflow-hidden hover:bg-white/10 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/5"
+            className="group glass rounded-[5px] overflow-hidden hover:bg-white/10 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/5"
           >
             {item.image && (
               <div className="relative h-44 img-zoom">
@@ -44,11 +44,11 @@ export default function MenuSection({ title, items, showAccompagnement = false }
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-dark/70 via-transparent to-transparent" />
                 {item.badge && (
-                  <span className="absolute top-3 left-3 inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-accent/90 text-white uppercase tracking-wider backdrop-blur-sm">
+                  <span className="absolute top-3 left-3 inline-flex items-center px-3 py-1 rounded-[5px] text-[10px] font-bold bg-accent/90 text-white uppercase tracking-wider backdrop-blur-sm">
                     {item.badge}
                   </span>
                 )}
-                <span className="absolute bottom-3 right-3 bg-primary/90 backdrop-blur-sm text-dark font-bold px-3 py-1 rounded-xl text-sm">
+                <span className="absolute bottom-3 right-3 bg-primary/90 backdrop-blur-sm text-dark font-bold px-3 py-1 rounded-[5px] text-sm">
                   {formatPrice(item.price)}
                 </span>
                 <AddToCartButton
