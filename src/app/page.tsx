@@ -13,6 +13,9 @@ import { getMenuData } from "@/lib/menu";
 
 import livraisonData from "@/data/livraison.json";
 
+// Refetch at most every 10 seconds so admin changes are reflected quickly
+export const revalidate = 10;
+
 export default async function Home() {
   const categories = await getMenuData();
 

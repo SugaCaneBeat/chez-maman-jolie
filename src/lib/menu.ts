@@ -77,6 +77,7 @@ export async function getMenuData(): Promise<Category[]> {
             .from("menu_items")
             .select("*")
             .eq("boisson_subcategory_id", sub.id)
+            .eq("available", true)
             .order("display_order");
           subcats.push({
             name: sub.name,
@@ -95,6 +96,7 @@ export async function getMenuData(): Promise<Category[]> {
           .from("menu_items")
           .select("*")
           .eq("category_id", cat.id)
+          .eq("available", true)
           .order("display_order");
 
         const { data: cond } = await supabase
