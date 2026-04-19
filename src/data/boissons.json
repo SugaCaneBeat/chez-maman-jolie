@@ -20,15 +20,6 @@
       ]
     },
     {
-      "name": "Bières",
-      "image": "https://images.unsplash.com/photo-1568146275834-e6666f70d8d8?w=600&q=80",
-      "items": [
-        { "name": "Heineken 25cl", "price": 3 },
-        { "name": "Heineken 50cl", "price": 5 },
-        { "name": "Primus / Mutzig", "price": 4 }
-      ]
-    },
-    {
       "name": "Cocktails",
       "image": "https://images.unsplash.com/photo-1747932947380-50af886cafea?w=600&q=80",
       "items": [

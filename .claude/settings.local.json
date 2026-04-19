@@ -28,7 +28,8 @@
       "Bash(clip)",
       "Bash(/c/Windows/System32/clip.exe)",
       "Bash(node scripts/setup-storage.mjs)",
-      "Bash(node scripts/apply-storage-policies.mjs)"
+      "Bash(node scripts/apply-storage-policies.mjs)",
+      "Bash(node scripts/delete-beers.mjs)"
     ]
   }
 }
