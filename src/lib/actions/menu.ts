@@ -28,6 +28,15 @@ export async function createMenuItem(data: {
   return { success: true };
 }
 
+export async function toggleIsSpecialite(id: string, is_specialite: boolean) {
+  const supabase = createServerClient();
+  const { error } = await supabase.from("menu_items").update({ is_specialite }).eq("id", id);
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/admin/menu");
+  revalidatePath("/");
+  return { success: true };
+}
+
 export async function updateMenuItem(id: string, data: {
   name?: string;
   price?: number;
@@ -61,6 +70,76 @@ export async function deleteMenuItem(id: string) {
 
 export async function toggleItemAvailability(id: string, available: boolean) {
   return updateMenuItem(id, { available });
+}
+
+export async function createCategory(data: {
+  name: string;
+  icon?: string;
+  type?: "standard" | "formules" | "boissons";
+}) {
+  const supabase = createServerClient();
+  const slug = data.name.toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || `cat-${Date.now()}`;
+
+  const { data: maxRow } = await supabase
+    .from("categories")
+    .select("display_order")
+    .order("display_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const display_order = (maxRow?.display_order ?? -1) + 1;
+
+  const { data: inserted, error } = await supabase
+    .from("categories")
+    .insert({
+      slug,
+      name: data.name,
+      icon: data.icon || "",
+      type: data.type || "standard",
+      active: true,
+      display_order,
+    })
+    .select()
+    .single();
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/admin/menu");
+  revalidatePath("/");
+  return { success: true, category: inserted };
+}
+
+export async function updateCategory(id: string, data: {
+  name?: string;
+  icon?: string;
+  active?: boolean;
+}) {
+  const supabase = createServerClient();
+  const { error } = await supabase.from("categories").update(data).eq("id", id);
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/admin/menu");
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function toggleCategoryActive(id: string, active: boolean) {
+  return updateCategory(id, { active });
+}
+
+export async function deleteCategory(id: string) {
+  const supabase = createServerClient();
+  const { count } = await supabase
+    .from("menu_items")
+    .select("id", { count: "exact", head: true })
+    .eq("category_id", id);
+  if ((count ?? 0) > 0) {
+    return { success: false, error: "Categorie non vide : supprime d'abord les articles." };
+  }
+  const { error } = await supabase.from("categories").delete().eq("id", id);
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/admin/menu");
+  revalidatePath("/");
+  return { success: true };
 }
 
 export async function uploadMenuImage(formData: FormData) {

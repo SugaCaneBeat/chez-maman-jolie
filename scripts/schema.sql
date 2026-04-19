@@ -10,6 +10,7 @@ CREATE TABLE categories (
   name TEXT NOT NULL,
   icon TEXT DEFAULT '',
   type TEXT NOT NULL DEFAULT 'standard' CHECK (type IN ('standard', 'formules', 'boissons')),
+  active BOOLEAN NOT NULL DEFAULT TRUE,
   display_order INT NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
@@ -96,6 +97,20 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON menu_items
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON orders
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- =============================================
+-- Migration helper (appele via supabase.rpc)
+-- =============================================
+
+CREATE OR REPLACE FUNCTION run_migration(sql TEXT)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  EXECUTE sql;
+END;
+$$;
 
 -- =============================================
 -- Row Level Security

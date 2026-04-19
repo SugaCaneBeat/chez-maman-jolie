@@ -57,6 +57,7 @@ export async function getMenuData(): Promise<Category[]> {
     const { data: cats, error: catsErr } = await supabase
       .from("categories")
       .select("*")
+      .eq("active", true)
       .order("display_order");
     if (catsErr || !cats || cats.length === 0) throw catsErr;
 
@@ -112,6 +113,26 @@ export async function getMenuData(): Promise<Category[]> {
             formules: (items || []).map(i => ({ name: i.name, price: Number(i.price) })),
             conditions: cond?.conditions || "",
           },
+        });
+      } else if (cat.slug === "specialites") {
+        // Items marqués is_specialite sur toutes les catégories
+        const { data: items } = await supabase
+          .from("menu_items")
+          .select("*")
+          .eq("is_specialite", true)
+          .eq("available", true)
+          .order("display_order");
+
+        categories.push({
+          id: cat.id, slug: cat.slug, name: cat.name, icon: cat.icon, type: cat.type,
+          items: (items || []).map(i => ({
+            id: i.id,
+            name: i.name,
+            price: Number(i.price),
+            image: i.image,
+            accompagnement: i.accompagnement,
+            badge: i.badge,
+          })),
         });
       } else {
         const { data: items } = await supabase
