@@ -1,14 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <!-- Background circle -->
-  <circle cx="32" cy="32" r="30" fill="#111008"/>
-  <circle cx="32" cy="32" r="29" fill="none" stroke="#C9922A" stroke-width="1" opacity="0.3"/>
-
-  <!-- Letter C -->
-  <text x="20" y="42" font-family="Georgia, 'Playfair Display', serif" font-size="28" font-weight="400" fill="#FFFFFF" letter-spacing="0">C</text>
-
-  <!-- Letter J in gold italic -->
-  <text x="36" y="42" font-family="Georgia, 'Playfair Display', serif" font-size="28" font-weight="700" font-style="italic" fill="#C9922A">J</text>
-
-  <!-- Small diamond accent -->
-  <path d="M31 50 L32.5 48 L34 50 L32.5 52 Z" fill="#C9922A" opacity="0.6"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Dark background -->
+  <circle cx="50" cy="50" r="50" fill="#0D0D0D"/>
+  <!-- Gold ring -->
+  <circle cx="50" cy="50" r="46.5" fill="none" stroke="#7A6012" stroke-width="2.2"/>
+  <!-- C — white bold serif -->
+  <text
+    x="34" y="63"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="46"
+    font-weight="700"
+    fill="#FFFFFF"
+    text-anchor="middle"
+  >C</text>
+  <!-- J — gold bold serif -->
+  <text
+    x="67" y="65"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="46"
+    font-weight="700"
+    fill="#C9922A"
+    text-anchor="middle"
+  >J</text>
+  <!-- Diamond accent -->
+  <rect x="46.5" y="77" width="7" height="7" fill="#C9922A" transform="rotate(45 50 80.5)"/>
 </svg>
