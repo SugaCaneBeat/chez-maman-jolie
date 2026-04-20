@@ -182,17 +182,31 @@ export default function CartDrawer() {
               </p>
             </div>
 
-            {/* Lydia / PayLib */}
-            <div className="glass rounded-[5px] p-5 space-y-3">
-              <div className="flex items-center gap-3 mb-1">
-                <div className="w-10 h-10 bg-purple-500/10 rounded-[5px] flex items-center justify-center">
-                  <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            {/* Lydia · PayLib · Wero */}
+            <div className="glass rounded-[5px] p-5 space-y-4">
+              {/* App badges */}
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5 bg-[#6B3FA0]/20 text-[#B47FE0] text-xs font-bold px-3 py-1.5 rounded-[5px]">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
                   </svg>
-                </div>
-                <h4 className="font-bold text-white">Lydia / PayLib</h4>
+                  Lydia
+                </span>
+                <span className="flex items-center gap-1.5 bg-[#0066CC]/20 text-[#4DA6FF] text-xs font-bold px-3 py-1.5 rounded-[5px]">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                  </svg>
+                  PayLib
+                </span>
+                <span className="flex items-center gap-1.5 bg-[#00B4B4]/20 text-[#2DD4D4] text-xs font-bold px-3 py-1.5 rounded-[5px]">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                  </svg>
+                  Wero
+                </span>
               </div>
 
+              {/* Shared phone number */}
               <div>
                 <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Num&eacute;ro associ&eacute;</p>
                 <div className="flex items-center justify-between bg-white/5 rounded-[5px] px-3 py-2">
@@ -208,14 +222,14 @@ export default function CartDrawer() {
               </div>
 
               <p className="text-white/20 text-[10px]">
-                Envoyez {formatPrice(getTotal())} au num&eacute;ro ci-dessus via Lydia ou PayLib
+                Envoyez {formatPrice(getTotal())} via Lydia, PayLib ou Wero au num&eacute;ro ci-dessus
               </p>
             </div>
 
             {/* Confirmation WhatsApp after payment */}
             <a
               href={`https://wa.me/33744275428?text=${encodeURIComponent(
-                `✅ *Paiement effectué — Chez Maman Jolie*\n\n${items.map(i => `• ${i.name} x${i.quantity}`).join('\n')}\n\n💰 Total : ${formatPrice(getTotal())}\n💳 Payé par virement / Lydia\n\n📍 Merci de confirmer la livraison.`
+                `✅ *Paiement effectué — Chez Maman Jolie*\n\n${items.map(i => `• ${i.name} x${i.quantity}`).join('\n')}\n\n💰 Total : ${formatPrice(getTotal())}\n💳 Payé via Lydia / PayLib / Wero\n\n📍 Merci de confirmer la livraison.`
               )}`}
               target="_blank"
               rel="noopener noreferrer"

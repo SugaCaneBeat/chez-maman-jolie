@@ -122,7 +122,11 @@ export default function Livraison({ data }: { data: LivraisonData }) {
                 </svg>
               </div>
               <h4 className="text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Paiement</h4>
-              <p className="text-white/60 text-sm">{data.paiement.join(" · ")}</p>
+              <div className="flex flex-wrap justify-center gap-1.5 mt-1">
+                {data.paiement.map((p) => (
+                  <span key={p} className="text-[10px] font-semibold text-white/50 border border-white/10 px-2 py-0.5 rounded-[5px]">{p}</span>
+                ))}
+              </div>
             </div>
             <div className="glass rounded-[5px] p-6 text-center hover:bg-white/8 transition-all">
               <div className="flex justify-center mb-3">

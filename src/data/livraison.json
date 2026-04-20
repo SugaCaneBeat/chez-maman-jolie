@@ -5,7 +5,7 @@
     { "name": "Zone 3 — 6 à 10 km", "frais": "4,50 € dès 30 €", "delai": "~50 min" }
   ],
   "minimum": "15 €",
-  "paiement": ["Espèces à la livraison", "Virement", "Lydia / PayLib"],
+  "paiement": ["Espèces", "Virement", "Lydia", "PayLib", "Wero"],
   "horaires": {
     "semaine": { "jours": "Lundi – Vendredi", "heures": "11h00 – 21h30" },
     "weekend": { "jours": "Samedi – Dimanche", "heures": "11h00 – 22h30" }
