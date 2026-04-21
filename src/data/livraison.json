@@ -2,9 +2,9 @@
   "depart": "Paris 11ème",
   "notePickup": "Livraison uniquement — pas de retrait sur place pour le moment",
   "zones": [
-    { "name": "Zone 1 — Moins de 3 km", "frais": "Gratuit dès 25 €", "delai": "~30 min" },
-    { "name": "Zone 2 — 3 à 6 km", "frais": "2,50 € dès 20 €", "delai": "~40 min" },
-    { "name": "Zone 3 — 6 à 10 km", "frais": "4,50 € dès 30 €", "delai": "~50 min" }
+    { "name": "Zone 1 — Moins de 3 km", "frais": "Gratuit dès 25 €", "fraisBas": "Sinon : 2 €",     "delai": "~30 min" },
+    { "name": "Zone 2 — 3 à 6 km",      "frais": "2,50 € dès 20 €",  "fraisBas": "Sinon : 4 €",     "delai": "~40 min" },
+    { "name": "Zone 3 — 6 à 10 km",     "frais": "4,50 € dès 30 €",  "fraisBas": "Sinon : 6 €",     "delai": "~50 min" }
   ],
   "minimum": "15 €",
   "paiement": ["Espèces", "Virement", "Lydia", "PayLib", "Wero"],
