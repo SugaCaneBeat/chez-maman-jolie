@@ -12,6 +12,10 @@ const BIC   = "XXXXXXXX";
 const OWNER = "Chez Maman Jolie";
 const DEPART = "Paris 11ème";
 
+/* Seuil de livraison gratuite — Zone 1 (< 3 km) */
+const FREE_DELIVERY_THRESHOLD = 25;
+const ZONE1_FEE_UNDER = 2;
+
 type PayMethod = "especes" | "virement" | "lydia" | "paylib" | "wero";
 
 const PAY_OPTIONS: { id: PayMethod; label: string; sub: string; color: string; textColor: string }[] = [
@@ -206,6 +210,82 @@ export default function CartDrawer() {
                   </div>
                 ))}
               </div>
+
+              {/* ── Delivery progress (Zone 1) ── */}
+              {(() => {
+                const total = getTotal();
+                const remaining = Math.max(0, FREE_DELIVERY_THRESHOLD - total);
+                const progress = Math.min(100, (total / FREE_DELIVERY_THRESHOLD) * 100);
+                const reached = remaining === 0;
+
+                return (
+                  <div
+                    className={`rounded-[5px] p-4 border transition-colors ${
+                      reached
+                        ? "bg-emerald-500/10 border-emerald-500/30"
+                        : "bg-primary/5 border-primary/20"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {reached ? (
+                          <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10m0 0h10m4 0h1a1 1 0 001-1v-3.65a1 1 0 00-.22-.624l-3.48-4.35A1 1 0 0014.52 6H13"/>
+                          </svg>
+                        )}
+                        <p className={`text-xs font-semibold truncate ${reached ? "text-emerald-300" : "text-white"}`}>
+                          {reached
+                            ? "Livraison gratuite atteinte"
+                            : <>Plus que <span className="text-primary">{formatPrice(remaining)}</span> pour la livraison gratuite</>
+                          }
+                        </p>
+                      </div>
+                      {!reached && (
+                        <span className="text-[10px] text-white/40 flex-shrink-0 font-mono">
+                          {formatPrice(total)} / {FREE_DELIVERY_THRESHOLD} €
+                        </span>
+                      )}
+                    </div>
+                    {/* Progress bar */}
+                    <div className="h-1.5 bg-white/5 rounded-[5px] overflow-hidden">
+                      <div
+                        className={`h-full rounded-[5px] transition-all duration-500 ${
+                          reached
+                            ? "bg-gradient-to-r from-emerald-400 to-emerald-300"
+                            : "bg-gradient-to-r from-primary to-primary-light"
+                        }`}
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between mt-2 gap-2">
+                      <p className="text-[10px] text-white/30 leading-snug flex-1">
+                        {reached
+                          ? "en Zone 1 (< 3 km). Autres zones : voir détails livraison."
+                          : <>Zone 1 (&lt; 3 km) &middot; sinon livraison à {ZONE1_FEE_UNDER} €</>
+                        }
+                      </p>
+                      {!reached && (
+                        <button
+                          onClick={() => {
+                            setDrawerOpen(false);
+                            setTimeout(() => {
+                              document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" });
+                            }, 300);
+                          }}
+                          className="text-[10px] text-primary hover:text-primary-light font-semibold whitespace-nowrap transition-colors underline underline-offset-2"
+                        >
+                          Ajouter un plat
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* ── Customer info ── */}
               <div className="glass rounded-[5px] p-4 space-y-3">
