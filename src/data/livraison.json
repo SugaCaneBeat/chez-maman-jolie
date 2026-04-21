@@ -7,15 +7,16 @@
     { "name": "Zone 3 — 6 à 10 km",     "frais": "4,50 € dès 30 €", "fraisBas": "Sinon : 6 €",        "delai": "~50 min" }
   ],
   "minimum": "25 €",
-  "paiement": ["Espèces", "Virement", "Lydia", "PayLib", "Wero"],
+  "paiement": ["Espèces", "Lydia", "PayLib", "Wero"],
   "horaires": {
     "semaine": { "jours": "Lundi – Vendredi", "heures": "11h00 – 21h30" },
     "weekend": { "jours": "Samedi – Dimanche", "heures": "11h00 – 22h30" }
   },
   "tunnel": [
-    { "step": 1, "title": "Choisir", "description": "Parcourez notre carte et choisissez vos plats" },
+    { "step": 1, "title": "Choisir",   "description": "Parcourez la carte et remplissez votre panier" },
     { "step": 2, "title": "Contacter", "description": "Envoyez votre commande par WhatsApp" },
     { "step": 3, "title": "Confirmer", "description": "Nous confirmons votre commande et le délai" },
-    { "step": 4, "title": "Recevoir", "description": "Recevez vos plats chauds chez vous" }
+    { "step": 4, "title": "Payer",     "description": "Réglez via Lydia, PayLib, Wero ou espèces" },
+    { "step": 5, "title": "Recevoir",  "description": "Recevez vos plats chauds chez vous" }
   ]
 }

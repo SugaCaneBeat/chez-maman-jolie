@@ -6,23 +6,19 @@ import { createOrder } from "@/lib/actions/orders";
 import Image from "next/image";
 
 /* ─── Payment methods ─── */
-const PHONE = "+33 7 44 27 54 28";
-const IBAN  = "FR76 XXXX XXXX XXXX XXXX XXXX XXX";
-const BIC   = "XXXXXXXX";
-const OWNER = "Chez Maman Jolie";
+const PHONE  = "+33 7 44 27 54 28";
 const DEPART = "Paris 11ème";
 
 /* Minimum de commande */
 const MIN_ORDER = 25;
 
-type PayMethod = "especes" | "virement" | "lydia" | "paylib" | "wero";
+type PayMethod = "especes" | "lydia" | "paylib" | "wero";
 
 const PAY_OPTIONS: { id: PayMethod; label: string; sub: string; color: string; textColor: string }[] = [
-  { id: "especes", label: "Espèces",  sub: "À la livraison", color: "bg-emerald-500/15", textColor: "text-emerald-400" },
-  { id: "virement",label: "Virement", sub: "IBAN bancaire",  color: "bg-blue-500/15",    textColor: "text-blue-400"    },
-  { id: "lydia",   label: "Lydia",    sub: "Mobile",          color: "bg-purple-500/15",  textColor: "text-purple-400"  },
-  { id: "paylib",  label: "PayLib",   sub: "Mobile",          color: "bg-sky-500/15",     textColor: "text-sky-400"     },
-  { id: "wero",    label: "Wero",     sub: "Mobile",          color: "bg-teal-500/15",    textColor: "text-teal-400"    },
+  { id: "especes", label: "Espèces", sub: "À la livraison", color: "bg-emerald-500/15", textColor: "text-emerald-400" },
+  { id: "lydia",   label: "Lydia",   sub: "Mobile",         color: "bg-purple-500/15",  textColor: "text-purple-400"  },
+  { id: "paylib",  label: "PayLib",  sub: "Mobile",         color: "bg-sky-500/15",     textColor: "text-sky-400"     },
+  { id: "wero",    label: "Wero",    sub: "Mobile",         color: "bg-teal-500/15",    textColor: "text-teal-400"    },
 ];
 
 /* ─── Copy row ─── */
@@ -56,6 +52,7 @@ export default function CartDrawer() {
   const [payMethod, setPayMethod] = useState<PayMethod | null>(null);
   const [address, setAddress]     = useState("");
   const [nom, setNom]             = useState("");
+  const [tel, setTel]             = useState("");
   const [copied, setCopied]       = useState<string | null>(null);
   const [saving, setSaving]       = useState(false);
   const [sent, setSent]           = useState(false);
@@ -63,19 +60,24 @@ export default function CartDrawer() {
 
   /* ── Refs for scroll-to-missing-field ── */
   const nomRef     = useRef<HTMLInputElement>(null);
+  const telRef     = useRef<HTMLInputElement>(null);
   const addressRef = useRef<HTMLTextAreaElement>(null);
   const payRef     = useRef<HTMLDivElement>(null);
 
   /* ── Validation ── */
   const minOrderValid = getTotal() >= MIN_ORDER;
   const nomValid      = nom.trim().length >= 2;
+  /* Tel: doit contenir au moins 10 chiffres (ignore espaces/points/tirets) */
+  const telDigits     = tel.replace(/\D/g, "");
+  const telValid      = telDigits.length >= 10;
   const addressValid  = address.trim().length >= 10;
   const paymentValid  = payMethod !== null;
-  const formValid     = minOrderValid && nomValid && addressValid && paymentValid;
+  const formValid     = minOrderValid && nomValid && telValid && addressValid && paymentValid;
 
   const missing: string[] = [];
   if (!minOrderValid) missing.push(`atteindre ${MIN_ORDER} € minimum`);
   if (!nomValid)      missing.push("votre nom");
+  if (!telValid)      missing.push("votre téléphone");
   if (!addressValid)  missing.push("votre adresse");
   if (!paymentValid)  missing.push("le mode de paiement");
 
@@ -90,17 +92,20 @@ export default function CartDrawer() {
 
   const handleClose = () => {
     setDrawerOpen(false);
-    setTimeout(() => { setPayMethod(null); setSent(false); setShowErrors(false); }, 400);
+    setTimeout(() => {
+      setPayMethod(null);
+      setSent(false);
+      setShowErrors(false);
+    }, 400);
   };
 
   /* ── Build WhatsApp message — cleanly formatted ── */
   const buildWAMessage = (method: PayMethod) => {
     const labels: Record<PayMethod, string> = {
-      especes:  "Espèces à la livraison",
-      virement: "Virement bancaire",
-      lydia:    "Lydia",
-      paylib:   "PayLib",
-      wero:     "Wero",
+      especes: "Espèces à la livraison",
+      lydia:   "Lydia",
+      paylib:  "PayLib",
+      wero:    "Wero",
     };
 
     const sep = "━━━━━━━━━━━━━━━━━━";
@@ -129,6 +134,7 @@ export default function CartDrawer() {
     /* Client */
     lines.push("👤 *CLIENT*");
     lines.push(nom);
+    lines.push(`📞 ${tel}`);
     lines.push("");
     lines.push("📍 *ADRESSE DE LIVRAISON*");
     address.split("\n").forEach(l => lines.push(l));
@@ -142,13 +148,6 @@ export default function CartDrawer() {
 
     if (method === "especes") {
       lines.push("À régler directement au livreur.");
-    } else if (method === "virement") {
-      lines.push("🏦 *Coordonnées bancaires*");
-      lines.push(`Titulaire :  ${OWNER}`);
-      lines.push(`IBAN :  \`${IBAN}\``);
-      lines.push(`BIC :  \`${BIC}\``);
-      lines.push("");
-      lines.push(`→ Virez *${total}* en mentionnant votre nom en référence.`);
     } else {
       lines.push(`📱 Numéro :  *${PHONE}*`);
       lines.push("");
@@ -171,6 +170,9 @@ export default function CartDrawer() {
       if (!nomValid) {
         nomRef.current?.focus();
         nomRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else if (!telValid) {
+        telRef.current?.focus();
+        telRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       } else if (!addressValid) {
         addressRef.current?.focus();
         addressRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -376,6 +378,28 @@ export default function CartDrawer() {
                 </div>
                 <div>
                   <label className="flex items-center gap-1 text-[10px] text-white/30 uppercase tracking-wider mb-1">
+                    Téléphone <span className="text-primary">*</span>
+                  </label>
+                  <input
+                    ref={telRef}
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    value={tel}
+                    onChange={(e) => setTel(e.target.value)}
+                    placeholder="06 12 34 56 78"
+                    className={`w-full bg-white/5 rounded-[5px] px-3 py-2 text-white text-sm focus:outline-none border placeholder:text-white/20 transition-colors ${
+                      showErrors && !telValid
+                        ? "border-red-500/60 bg-red-500/5 focus:border-red-400"
+                        : "border-white/5 focus:border-primary/50"
+                    }`}
+                  />
+                  {showErrors && !telValid && (
+                    <p className="text-[10px] text-red-400 mt-1">Numéro valide requis (au moins 10 chiffres)</p>
+                  )}
+                </div>
+                <div>
+                  <label className="flex items-center gap-1 text-[10px] text-white/30 uppercase tracking-wider mb-1">
                     Adresse de livraison <span className="text-primary">*</span>
                   </label>
                   <textarea
@@ -407,7 +431,7 @@ export default function CartDrawer() {
                 <p className="text-[10px] text-white/40 uppercase tracking-widest mb-2 font-bold flex items-center gap-1">
                   Mode de paiement <span className="text-primary">*</span>
                 </p>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-2 gap-1.5">
                   {PAY_OPTIONS.map((opt) => (
                     <button
                       key={opt.id}
@@ -429,24 +453,6 @@ export default function CartDrawer() {
                   <p className="text-[10px] text-red-400 mt-2">Choisissez un mode de paiement</p>
                 )}
               </div>
-
-              {/* ── Inline payment details (Virement) ── */}
-              {payMethod === "virement" && (
-                <div className="glass rounded-[5px] p-4 space-y-2.5 border border-blue-500/20">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                    </svg>
-                    <h4 className="text-white text-xs font-bold">Coordonnées bancaires</h4>
-                  </div>
-                  <CopyRow label="Titulaire" value={OWNER}     copied={copied} onCopy={handleCopy}/>
-                  <CopyRow label="IBAN"      value={IBAN} mono copied={copied} onCopy={handleCopy}/>
-                  <CopyRow label="BIC"       value={BIC}  mono copied={copied} onCopy={handleCopy}/>
-                  <p className="text-white/30 text-[10px]">
-                    Les coordonnées seront aussi dans le message WhatsApp. Mentionnez votre nom en référence.
-                  </p>
-                </div>
-              )}
 
               {/* ── Inline payment details (Lydia / PayLib / Wero) ── */}
               {isMobilePay && (
@@ -503,9 +509,7 @@ export default function CartDrawer() {
                   </svg>
                   <p className="text-white/80 text-xs leading-relaxed">
                     Commande envoyée sur WhatsApp avec toutes les infos de paiement.
-                    {payMethod !== "especes" && ` Effectuez le paiement via ${
-                      payMethod === "virement" ? "virement" : appName
-                    } après confirmation.`}
+                    {payMethod !== "especes" && ` Effectuez le paiement via ${appName} après confirmation.`}
                   </p>
                 </div>
                 <button onClick={handleClose} className="w-full text-white/50 hover:text-white text-xs py-2 transition-colors">
