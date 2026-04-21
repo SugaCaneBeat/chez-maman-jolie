@@ -8,6 +8,7 @@ import {
 } from "@/lib/actions/menu";
 import ItemForm from "./ItemForm";
 import FormuleEditor from "./FormuleEditor";
+import BoissonsEditor from "./BoissonsEditor";
 
 interface Category {
   id: string; slug: string; name: string; icon: string; type: string; active?: boolean;
@@ -225,6 +226,16 @@ export default function MenuEditor({
           if (selectedCategory?.type === "formules") {
             return (
               <FormuleEditor
+                categoryId={selectedCat}
+                categoryName={selectedCategory.name}
+              />
+            );
+          }
+
+          /* ── Boissons category → delegate to BoissonsEditor ── */
+          if (selectedCategory?.type === "boissons") {
+            return (
+              <BoissonsEditor
                 categoryId={selectedCat}
                 categoryName={selectedCategory.name}
               />
