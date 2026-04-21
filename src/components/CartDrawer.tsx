@@ -12,9 +12,8 @@ const BIC   = "XXXXXXXX";
 const OWNER = "Chez Maman Jolie";
 const DEPART = "Paris 11ème";
 
-/* Seuil de livraison gratuite — Zone 1 (< 3 km) */
-const FREE_DELIVERY_THRESHOLD = 25;
-const ZONE1_FEE_UNDER = 2;
+/* Minimum de commande */
+const MIN_ORDER = 25;
 
 type PayMethod = "especes" | "virement" | "lydia" | "paylib" | "wero";
 
@@ -68,15 +67,17 @@ export default function CartDrawer() {
   const payRef     = useRef<HTMLDivElement>(null);
 
   /* ── Validation ── */
-  const nomValid     = nom.trim().length >= 2;
-  const addressValid = address.trim().length >= 10;
-  const paymentValid = payMethod !== null;
-  const formValid    = nomValid && addressValid && paymentValid;
+  const minOrderValid = getTotal() >= MIN_ORDER;
+  const nomValid      = nom.trim().length >= 2;
+  const addressValid  = address.trim().length >= 10;
+  const paymentValid  = payMethod !== null;
+  const formValid     = minOrderValid && nomValid && addressValid && paymentValid;
 
   const missing: string[] = [];
-  if (!nomValid)     missing.push("votre nom");
-  if (!addressValid) missing.push("votre adresse");
-  if (!paymentValid) missing.push("le mode de paiement");
+  if (!minOrderValid) missing.push(`atteindre ${MIN_ORDER} € minimum`);
+  if (!nomValid)      missing.push("votre nom");
+  if (!addressValid)  missing.push("votre adresse");
+  if (!paymentValid)  missing.push("le mode de paiement");
 
   const formatPrice = (p: number) =>
     p % 1 === 0 ? `${p} €` : `${p.toFixed(2).replace(".", ",")} €`;
@@ -243,11 +244,11 @@ export default function CartDrawer() {
                 ))}
               </div>
 
-              {/* ── Delivery progress (Zone 1) ── */}
+              {/* ── Minimum order progress ── */}
               {(() => {
                 const total = getTotal();
-                const remaining = Math.max(0, FREE_DELIVERY_THRESHOLD - total);
-                const progress = Math.min(100, (total / FREE_DELIVERY_THRESHOLD) * 100);
+                const remaining = Math.max(0, MIN_ORDER - total);
+                const progress = Math.min(100, (total / MIN_ORDER) * 100);
                 const reached = remaining === 0;
 
                 return (
@@ -255,7 +256,7 @@ export default function CartDrawer() {
                     className={`rounded-[5px] p-4 border transition-colors ${
                       reached
                         ? "bg-emerald-500/10 border-emerald-500/30"
-                        : "bg-primary/5 border-primary/20"
+                        : "bg-amber-500/10 border-amber-500/30"
                     }`}
                   >
                     <div className="flex items-center justify-between gap-3 mb-2">
@@ -265,23 +266,20 @@ export default function CartDrawer() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
                           </svg>
                         ) : (
-                          <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/>
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10m0 0h10m4 0h1a1 1 0 001-1v-3.65a1 1 0 00-.22-.624l-3.48-4.35A1 1 0 0014.52 6H13"/>
+                          <svg className="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                           </svg>
                         )}
-                        <p className={`text-xs font-semibold truncate ${reached ? "text-emerald-300" : "text-white"}`}>
+                        <p className={`text-xs font-semibold truncate ${reached ? "text-emerald-300" : "text-amber-200"}`}>
                           {reached
-                            ? "Livraison gratuite atteinte"
-                            : <>Plus que <span className="text-primary">{formatPrice(remaining)}</span> pour la livraison gratuite</>
+                            ? "Minimum de commande atteint"
+                            : <>Il manque <span className="text-amber-300">{formatPrice(remaining)}</span> pour commander</>
                           }
                         </p>
                       </div>
-                      {!reached && (
-                        <span className="text-[10px] text-white/40 flex-shrink-0 font-mono">
-                          {formatPrice(total)} / {FREE_DELIVERY_THRESHOLD} €
-                        </span>
-                      )}
+                      <span className={`text-[10px] flex-shrink-0 font-mono ${reached ? "text-emerald-400/70" : "text-amber-400/70"}`}>
+                        {formatPrice(total)} / {MIN_ORDER} €
+                      </span>
                     </div>
                     {/* Progress bar */}
                     <div className="h-1.5 bg-white/5 rounded-[5px] overflow-hidden">
@@ -289,16 +287,16 @@ export default function CartDrawer() {
                         className={`h-full rounded-[5px] transition-all duration-500 ${
                           reached
                             ? "bg-gradient-to-r from-emerald-400 to-emerald-300"
-                            : "bg-gradient-to-r from-primary to-primary-light"
+                            : "bg-gradient-to-r from-amber-500 to-amber-300"
                         }`}
                         style={{ width: `${progress}%` }}
                       />
                     </div>
                     <div className="flex items-center justify-between mt-2 gap-2">
-                      <p className="text-[10px] text-white/30 leading-snug flex-1">
+                      <p className="text-[10px] text-white/40 leading-snug flex-1">
                         {reached
-                          ? "en Zone 1 (< 3 km). Autres zones : voir détails livraison."
-                          : <>Zone 1 (&lt; 3 km) &middot; sinon livraison à {ZONE1_FEE_UNDER} €</>
+                          ? "Livraison gratuite en Zone 1 (< 3 km)"
+                          : `Commande minimum ${MIN_ORDER} € · livraison gratuite dès ce montant en Zone 1`
                         }
                       </p>
                       {!reached && (
@@ -514,7 +512,13 @@ export default function CartDrawer() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                   )}
-                  {saving ? "Envoi..." : formValid ? "Envoyer sur WhatsApp" : "Complétez vos informations"}
+                  {saving
+                    ? "Envoi..."
+                    : formValid
+                      ? "Envoyer sur WhatsApp"
+                      : !minOrderValid
+                        ? `Minimum ${MIN_ORDER} € pour commander`
+                        : "Complétez vos informations"}
                 </button>
                 <button onClick={clearCart} className="w-full text-white/30 hover:text-accent text-xs text-center py-1 transition-colors">
                   Vider le panier
