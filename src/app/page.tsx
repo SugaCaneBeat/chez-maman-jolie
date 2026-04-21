@@ -20,11 +20,19 @@ export const revalidate = 10;
 export default async function Home() {
   const categories = await getMenuData();
 
+  /* ── Pick 3 featured items for the Hero ── */
+  /* Priority: items with image, from standard categories (plats, entrées…) */
+  const allItems = categories
+    .filter((c) => c.type === "standard")
+    .flatMap((c) => c.items || []);
+  const withImages = allItems.filter((i) => i.id && i.image);
+  const featured = withImages.slice(0, 3);
+
   return (
     <CartProvider>
       <Header />
       <main className="bg-dark">
-        <Hero />
+        <Hero featured={featured} />
 
         {/* Menu */}
         <section id="menu" className="py-20 sm:py-32 relative overflow-hidden">

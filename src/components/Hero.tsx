@@ -1,7 +1,45 @@
 import Image from "next/image";
 import CommanderButton from "./CommanderButton";
+import AddToCartButton from "./AddToCartButton";
+import type { MenuItem } from "@/lib/menu";
 
-export default function Hero() {
+type FeaturedItem = MenuItem & { desc?: string };
+
+/* ── Fallback demo items (used if DB is empty) ── */
+const FALLBACK: FeaturedItem[] = [
+  {
+    id: "fallback-1",
+    name: "Poulet Muamba",
+    price: 10,
+    image: "https://images.unsplash.com/photo-1658713064971-5fcef7dfe417?w=400&q=80",
+    desc: "Pâte d'arachide & riz",
+  },
+  {
+    id: "fallback-2",
+    name: "Thiéboudiène",
+    price: 13,
+    image: "https://images.unsplash.com/photo-1665332195309-9d75071138f0?w=400&q=80",
+    desc: "Riz au poisson sénégalais",
+  },
+  {
+    id: "fallback-3",
+    name: "Ngolo Liboké",
+    price: 15,
+    image: "https://images.unsplash.com/photo-1652065085956-d0138801fee9?w=400&q=80",
+    desc: "Poisson en feuille de bananier",
+  },
+];
+
+export default function Hero({ featured }: { featured?: MenuItem[] }) {
+  /* Use DB items if at least 3 are available with images, else fallback */
+  const items: FeaturedItem[] =
+    featured && featured.length >= 3
+      ? featured.slice(0, 3)
+      : FALLBACK;
+
+  const formatPrice = (p: number) =>
+    p % 1 === 0 ? `${p} €` : `${p.toFixed(2).replace(".", ",")} €`;
+
   return (
     <section id="accueil" className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background image */}
@@ -64,25 +102,51 @@ export default function Hero() {
           </a>
         </div>
 
-        {/* Featured dishes with real images */}
+        {/* Featured dishes — commandables */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6 max-w-4xl mx-auto animate-fade-in-up animation-delay-500">
-          {[
-            { name: "Poulet Muamba", desc: "Pâte d'arachide & riz", price: "10 €", img: "https://images.unsplash.com/photo-1658713064971-5fcef7dfe417?w=400&q=80" },
-            { name: "Thiéboudiène", desc: "Riz au poisson sénégalais", price: "13 €", img: "https://images.unsplash.com/photo-1665332195309-9d75071138f0?w=400&q=80" },
-            { name: "Ngolo Liboké", desc: "Poisson en feuille de bananier", price: "15 €", img: "https://images.unsplash.com/photo-1652065085956-d0138801fee9?w=400&q=80" },
-          ].map((dish, i) => (
+          {items.map((dish, i) => (
             <div
-              key={dish.name}
+              key={dish.id || dish.name}
               className={`group glass rounded-[5px] overflow-hidden hover:bg-white/10 transition-all duration-500 hover:scale-[1.03] hover:shadow-2xl hover:shadow-primary/10 ${i === 1 ? 'sm:-translate-y-4' : ''}`}
             >
+              {/* Image + Add-to-cart overlay */}
               <div className="relative h-44 sm:h-48 img-zoom">
-                <Image src={dish.img} alt={dish.name} fill className="object-cover" sizes="(max-width: 640px) 100vw, 33vw" />
+                {dish.image && (
+                  <Image
+                    src={dish.image}
+                    alt={dish.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 100vw, 33vw"
+                    unoptimized={dish.image.startsWith("http")}
+                  />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-dark/80 to-transparent" />
-                <span className="absolute bottom-3 right-3 text-primary font-bold text-xl">{dish.price}</span>
+                <span className="absolute bottom-3 right-3 text-primary font-bold text-xl drop-shadow-lg">
+                  {formatPrice(dish.price)}
+                </span>
+
+                {/* Add-to-cart button — top-right of the card */}
+                <div className="absolute top-3 right-3 z-10">
+                  <AddToCartButton
+                    item={{
+                      id: dish.id || `hero-${i}`,
+                      name: dish.name,
+                      price: dish.price,
+                      image: dish.image,
+                    }}
+                  />
+                </div>
               </div>
-              <div className="p-5">
-                <h3 className="font-heading text-white font-bold text-lg mb-1">{dish.name}</h3>
-                <p className="text-white/40 text-sm">{dish.desc}</p>
+
+              {/* Body */}
+              <div className="p-5 text-left">
+                <h3 className="font-heading text-white font-bold text-lg mb-1 truncate">{dish.name}</h3>
+                {(dish.desc || dish.accompagnement) && (
+                  <p className="text-white/40 text-sm truncate">
+                    {dish.desc || dish.accompagnement}
+                  </p>
+                )}
               </div>
             </div>
           ))}
