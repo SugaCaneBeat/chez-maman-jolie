@@ -93,7 +93,7 @@ export default function CartDrawer() {
     setTimeout(() => { setPayMethod(null); setSent(false); setShowErrors(false); }, 400);
   };
 
-  /* ── Build comprehensive WhatsApp message ── */
+  /* ── Build WhatsApp message — cleanly formatted ── */
   const buildWAMessage = (method: PayMethod) => {
     const labels: Record<PayMethod, string> = {
       especes:  "Espèces à la livraison",
@@ -103,32 +103,64 @@ export default function CartDrawer() {
       wero:     "Wero",
     };
 
-    let msg = "🛒 *Nouvelle commande — Chez Maman Jolie*\n\n";
-    msg += "*Articles :*\n";
+    const sep = "━━━━━━━━━━━━━━━━━━";
+    const sub = "──────────────────";
+    const total = formatPrice(getTotal());
+    const lines: string[] = [];
+
+    /* Header */
+    lines.push(sep);
+    lines.push("*CHEZ MAMAN JOLIE*");
+    lines.push("_Nouvelle commande_");
+    lines.push(sep);
+    lines.push("");
+
+    /* Articles */
+    lines.push("🍽️ *ARTICLES*");
     items.forEach(i => {
-      msg += `• ${i.name} x${i.quantity} — ${formatPrice(i.price * i.quantity)}\n`;
+      lines.push(`• ${i.name}  _x${i.quantity}_  —  ${formatPrice(i.price * i.quantity)}`);
     });
+    lines.push("");
+    lines.push(`*Total :*  *${total}*`);
+    lines.push("");
+    lines.push(sub);
+    lines.push("");
 
-    msg += `\n💰 *Total : ${formatPrice(getTotal())}*\n`;
-    msg += `💳 Paiement : *${labels[method]}*\n`;
+    /* Client */
+    lines.push("👤 *CLIENT*");
+    lines.push(nom);
+    lines.push("");
+    lines.push("📍 *ADRESSE DE LIVRAISON*");
+    address.split("\n").forEach(l => lines.push(l));
+    lines.push("");
+    lines.push(sub);
+    lines.push("");
 
-    /* Payment instructions inside the message itself */
-    if (method === "virement") {
-      msg += `\n🏦 *Coordonnées bancaires :*\n`;
-      msg += `Titulaire : ${OWNER}\n`;
-      msg += `IBAN : ${IBAN}\n`;
-      msg += `BIC : ${BIC}\n`;
-    } else if (method === "lydia" || method === "paylib" || method === "wero") {
-      msg += `\n📱 *Numéro ${labels[method]} :* ${PHONE}\n`;
-      msg += `Envoyez ${formatPrice(getTotal())} via ${labels[method]} au numéro ci-dessus.\n`;
+    /* Paiement */
+    lines.push(`💳 *PAIEMENT :  ${labels[method]}*`);
+    lines.push("");
+
+    if (method === "especes") {
+      lines.push("À régler directement au livreur.");
+    } else if (method === "virement") {
+      lines.push("🏦 *Coordonnées bancaires*");
+      lines.push(`Titulaire :  ${OWNER}`);
+      lines.push(`IBAN :  \`${IBAN}\``);
+      lines.push(`BIC :  \`${BIC}\``);
+      lines.push("");
+      lines.push(`→ Virez *${total}* en mentionnant votre nom en référence.`);
+    } else {
+      lines.push(`📱 Numéro :  *${PHONE}*`);
+      lines.push("");
+      lines.push(`→ Envoyez *${total}* via ${labels[method]} au numéro ci-dessus.`);
     }
 
-    /* Customer info */
-    msg += `\n👤 *Client :* ${nom ? nom : "_à préciser_"}\n`;
-    msg += `📍 *Adresse de livraison :*\n${address ? address : "_à préciser_"}\n`;
+    lines.push("");
+    lines.push(sep);
+    lines.push("");
+    lines.push("_Je confirme votre commande dès réception et vous communique le délai de livraison._");
 
-    msg += `\n_Je confirme votre commande dès réception et vous donne le délai de livraison._`;
-    return encodeURIComponent(msg);
+    return encodeURIComponent(lines.join("\n"));
   };
 
   const handleOrder = async () => {
