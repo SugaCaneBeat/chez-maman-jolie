@@ -9,6 +9,15 @@ import type { Category } from "@/lib/menu";
 
 /* ─── Icônes 2D plates pour les sections ─── */
 const ICONS: Record<string, ReactNode> = {
+  tous: (
+    <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3"  width="7" height="7" rx="1"/>
+      <rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/>
+      <rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+  ),
   entrees: (
     <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
@@ -46,25 +55,46 @@ const ICONS: Record<string, ReactNode> = {
 
 /* ─── Sections restaurant ─── */
 const SECTIONS = [
+  { id: "tous",     label: "Tous",     slugs: [] },
   { id: "entrees",  label: "Entrées",  slugs: ["entrees"] },
   { id: "plats",    label: "Plats",    slugs: ["formules","specialites","viandes","poissons","mijotes","legumes","accompagnements"] },
   { id: "desserts", label: "Desserts", slugs: ["desserts"] },
   { id: "boissons", label: "Boissons", slugs: ["boissons"] },
 ] as const;
 
+/* Ordre d'affichage de toutes les catégories en mode "Tous" */
+const ALL_ORDER = [
+  "entrees",
+  "formules",
+  "specialites",
+  "viandes",
+  "poissons",
+  "mijotes",
+  "legumes",
+  "accompagnements",
+  "desserts",
+  "boissons",
+];
+
 export default function MenuTabs({ categories }: { categories: Category[] }) {
   const catBySlug = Object.fromEntries(categories.map(c => [c.slug, c]));
 
-  const [activeSection, setActiveSection] = useState("entrees");
+  const [activeSection, setActiveSection] = useState("tous");
   const [activeSub, setActiveSub]         = useState("formules");
 
   const section  = SECTIONS.find(s => s.id === activeSection)!;
+  const isTous   = activeSection === "tous";
   const subCats  = section.slugs.map(sl => catBySlug[sl]).filter(Boolean) as Category[];
   const isMulti  = subCats.length > 1;
   const displayCat = isMulti
     ? (subCats.find(c => c.slug === activeSub) ?? subCats[0])
     : subCats[0];
   const accompsCat = catBySlug["accompagnements"];
+
+  /* Toutes les catégories pour le mode "Tous" — dans l'ordre défini */
+  const allCats: Category[] = isTous
+    ? ALL_ORDER.map(slug => catBySlug[slug]).filter(Boolean) as Category[]
+    : [];
 
   const switchSection = (id: string) => {
     setActiveSection(id);
@@ -108,7 +138,7 @@ export default function MenuTabs({ categories }: { categories: Category[] }) {
       {/* ══════════════════════════════════════════
           SOUS-NAVIGATION — iOS filter chips, angles 5px
           ══════════════════════════════════════════ */}
-      {isMulti && (
+      {isMulti && !isTous && (
         <div className="relative mb-8 -mx-5 sm:mx-0">
           {/* Fade droit scroll hint */}
           <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-dark to-transparent z-10 sm:hidden" />
@@ -142,26 +172,54 @@ export default function MenuTabs({ categories }: { categories: Category[] }) {
           CONTENU
           ══════════════════════════════════════════ */}
       <div className="min-h-[400px]">
-        {displayCat?.type === "formules" && displayCat.formulesData && (
-          <FormulesSection data={displayCat.formulesData} />
-        )}
-        {displayCat?.type === "boissons" && displayCat.boissonsData && (
-          <BoissonsSection data={displayCat.boissonsData} />
-        )}
-        {displayCat?.type === "standard" && (
+        {isTous ? (
+          /* Mode "Tous" — affiche chaque catégorie empilée */
+          <div className="space-y-14">
+            {allCats.length === 0 && (
+              <p className="text-white/30 text-center py-20">Aucun plat disponible</p>
+            )}
+            {allCats.map((cat) => (
+              <div key={cat.slug}>
+                {cat.type === "formules" && cat.formulesData && (
+                  <FormulesSection data={cat.formulesData} />
+                )}
+                {cat.type === "boissons" && cat.boissonsData && (
+                  <BoissonsSection data={cat.boissonsData} />
+                )}
+                {cat.type === "standard" && (
+                  <MenuSection
+                    title={cat.name}
+                    items={cat.items}
+                    showAccompagnement={["specialites","viandes","poissons","mijotes"].includes(cat.slug)}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
           <>
-            <MenuSection
-              title={displayCat.name}
-              items={displayCat.items}
-              showAccompagnement={["specialites","viandes","poissons","mijotes"].includes(displayCat.slug)}
-            />
-            {displayCat.slug === "legumes" && accompsCat && (
-              <MenuSection title="Accompagnements" items={accompsCat.items} />
+            {displayCat?.type === "formules" && displayCat.formulesData && (
+              <FormulesSection data={displayCat.formulesData} />
+            )}
+            {displayCat?.type === "boissons" && displayCat.boissonsData && (
+              <BoissonsSection data={displayCat.boissonsData} />
+            )}
+            {displayCat?.type === "standard" && (
+              <>
+                <MenuSection
+                  title={displayCat.name}
+                  items={displayCat.items}
+                  showAccompagnement={["specialites","viandes","poissons","mijotes"].includes(displayCat.slug)}
+                />
+                {displayCat.slug === "legumes" && accompsCat && (
+                  <MenuSection title="Accompagnements" items={accompsCat.items} />
+                )}
+              </>
+            )}
+            {!displayCat && (
+              <p className="text-white/30 text-center py-20">Aucun plat disponible</p>
             )}
           </>
-        )}
-        {!displayCat && (
-          <p className="text-white/30 text-center py-20">Aucun plat disponible</p>
         )}
       </div>
     </div>

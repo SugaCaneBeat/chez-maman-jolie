@@ -13,10 +13,10 @@
     "weekend": { "jours": "Samedi – Dimanche", "heures": "11h00 – 22h30" }
   },
   "tunnel": [
-    { "step": 1, "title": "Choisir",   "description": "Parcourez la carte et remplissez votre panier" },
-    { "step": 2, "title": "Contacter", "description": "Envoyez votre commande par WhatsApp" },
-    { "step": 3, "title": "Confirmer", "description": "Nous confirmons votre commande et le délai" },
-    { "step": 4, "title": "Payer",     "description": "Réglez via Lydia, PayLib, Wero ou espèces" },
-    { "step": 5, "title": "Recevoir",  "description": "Recevez vos plats chauds chez vous" }
+    { "step": 1, "title": "Choisir",   "description": "Parcourez la carte et ajoutez au panier" },
+    { "step": 2, "title": "Commander", "description": "Vos coordonnées + envoi via WhatsApp" },
+    { "step": 3, "title": "Confirmer", "description": "Nous validons la commande et le délai" },
+    { "step": 4, "title": "Payer",     "description": "Wero, Lydia, PayLib, carte ou espèces" },
+    { "step": 5, "title": "Recevoir",  "description": "Livraison chaude à votre adresse" }
   ]
 }

@@ -1,8 +1,11 @@
 import Image from "next/image";
+import AddToCartButton from "./AddToCartButton";
 
 interface BoissonItem {
+  id?: string;
   name: string;
   price: number;
+  image?: string;
 }
 
 interface BoissonCategory {
@@ -35,11 +38,27 @@ export default function BoissonsSection({ data }: { data: BoissonsData }) {
                 <h4 className="absolute bottom-3 left-5 font-heading text-white text-lg font-bold">{cat.name}</h4>
               </div>
             )}
-            <div className="p-5 space-y-3">
-              {cat.items.map((item) => (
-                <div key={item.name} className="flex items-center justify-between">
-                  <span className="text-sm text-white/60">{item.name}</span>
-                  <span className="text-sm font-bold text-primary ml-3 whitespace-nowrap">{formatPrice(item.price)}</span>
+            {!cat.image && (
+              <div className="px-5 pt-5">
+                <h4 className="font-heading text-white text-lg font-bold">{cat.name}</h4>
+              </div>
+            )}
+            <div className="p-5 space-y-2.5">
+              {cat.items.map((item, i) => (
+                <div key={item.id ?? `${cat.name}-${i}`} className="flex items-center justify-between gap-2">
+                  <span className="text-sm text-white/70 flex-1 min-w-0 truncate">{item.name}</span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-sm font-bold text-primary whitespace-nowrap">{formatPrice(item.price)}</span>
+                    <AddToCartButton
+                      item={{
+                        id: item.id ?? `boisson-${cat.name}-${item.name}`,
+                        name: item.name,
+                        price: item.price,
+                        image: item.image,
+                      }}
+                      className="!w-7 !h-7"
+                    />
+                  </div>
                 </div>
               ))}
             </div>

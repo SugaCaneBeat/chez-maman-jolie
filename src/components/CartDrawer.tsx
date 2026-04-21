@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useCart } from "@/context/CartContext";
 import { createOrder } from "@/lib/actions/orders";
+import { resolveZone, type ZoneInfo, type GeocodedAddress, DEPART_LABEL } from "@/lib/geo";
 import Image from "next/image";
 
 /* ─── Payment methods ─── */
@@ -12,39 +13,23 @@ const DEPART = "Paris 11ème";
 /* Minimum de commande */
 const MIN_ORDER = 25;
 
-type PayMethod = "especes" | "lydia" | "paylib" | "wero";
+type PayMethod = "especes" | "carte" | "lydia" | "paylib" | "wero";
 
 const PAY_OPTIONS: { id: PayMethod; label: string; sub: string; color: string; textColor: string }[] = [
   { id: "especes", label: "Espèces", sub: "À la livraison", color: "bg-emerald-500/15", textColor: "text-emerald-400" },
+  { id: "carte",   label: "Carte",   sub: "À la livraison", color: "bg-indigo-500/15",  textColor: "text-indigo-400"  },
   { id: "lydia",   label: "Lydia",   sub: "Mobile",         color: "bg-purple-500/15",  textColor: "text-purple-400"  },
   { id: "paylib",  label: "PayLib",  sub: "Mobile",         color: "bg-sky-500/15",     textColor: "text-sky-400"     },
   { id: "wero",    label: "Wero",    sub: "Mobile",         color: "bg-teal-500/15",    textColor: "text-teal-400"    },
 ];
 
-/* ─── Copy row ─── */
-function CopyRow({ label, value, mono, copied, onCopy }: {
-  label: string; value: string; mono?: boolean; copied: string | null; onCopy: (v: string, l: string) => void;
-}) {
-  const ok = copied === label;
-  return (
-    <div>
-      {label && <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1">{label}</p>}
-      <div className="flex items-center justify-between bg-white/5 rounded-[5px] px-3 py-2 gap-3">
-        <span className={`text-white text-sm truncate ${mono ? "font-mono" : "font-medium"}`}>{value}</span>
-        <button
-          onClick={() => onCopy(value.replace(/\s/g, ""), label)}
-          className="text-white/40 hover:text-primary transition-colors flex-shrink-0"
-          aria-label={`Copier ${label || value}`}
-        >
-          {ok
-            ? <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
-            : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-          }
-        </button>
-      </div>
-    </div>
-  );
-}
+/* ─── Deep-links / URLs des apps de paiement mobile ─── */
+const APP_URLS: Record<"lydia" | "paylib" | "wero", string> = {
+  lydia:  "https://lydia.me/",
+  paylib: "https://www.paylib.fr/",
+  wero:   "https://wero-wallet.eu/fr",
+};
+
 
 export default function CartDrawer() {
   const { items, isDrawerOpen, setDrawerOpen, updateQuantity, removeItem, clearCart, getTotal, getCount } = useCart();
@@ -55,8 +40,15 @@ export default function CartDrawer() {
   const [tel, setTel]             = useState("");
   const [copied, setCopied]       = useState<string | null>(null);
   const [saving, setSaving]       = useState(false);
-  const [sent, setSent]           = useState(false);
   const [showErrors, setShowErrors] = useState(false);
+
+  /* ── Geolocation state ── */
+  const [zoneInfo, setZoneInfo] = useState<ZoneInfo | null>(null);
+  const [geocoded, setGeocoded] = useState<GeocodedAddress | null>(null);
+  const [geocoding, setGeocoding] = useState(false);
+
+  /* ── Flow step: "form" → "payment" → "sent" ── */
+  const [step, setStep] = useState<"form" | "payment" | "sent">("form");
 
   /* ── Refs for scroll-to-missing-field ── */
   const nomRef     = useRef<HTMLInputElement>(null);
@@ -65,21 +57,47 @@ export default function CartDrawer() {
   const payRef     = useRef<HTMLDivElement>(null);
 
   /* ── Validation ── */
-  const minOrderValid = getTotal() >= MIN_ORDER;
+  const subtotal      = getTotal();
+  const deliveryFee   = zoneInfo && !zoneInfo.outOfRange ? zoneInfo.fee : 0;
+  const grandTotal    = subtotal + deliveryFee;
+  const minOrderValid = subtotal >= MIN_ORDER;
   const nomValid      = nom.trim().length >= 2;
-  /* Tel: doit contenir au moins 10 chiffres (ignore espaces/points/tirets) */
   const telDigits     = tel.replace(/\D/g, "");
   const telValid      = telDigits.length >= 10;
   const addressValid  = address.trim().length >= 10;
   const paymentValid  = payMethod !== null;
-  const formValid     = minOrderValid && nomValid && telValid && addressValid && paymentValid;
+  const zoneValid     = zoneInfo !== null && !zoneInfo.outOfRange;
+  const formValid     = minOrderValid && nomValid && telValid && addressValid && zoneValid && paymentValid;
 
   const missing: string[] = [];
   if (!minOrderValid) missing.push(`atteindre ${MIN_ORDER} € minimum`);
   if (!nomValid)      missing.push("votre nom");
   if (!telValid)      missing.push("votre téléphone");
   if (!addressValid)  missing.push("votre adresse");
+  if (!zoneValid && addressValid) missing.push("une adresse dans notre zone");
   if (!paymentValid)  missing.push("le mode de paiement");
+
+  /* ── Géocoder l'adresse (debounced) dès qu'elle change ── */
+  useEffect(() => {
+    if (!addressValid) {
+      setZoneInfo(null);
+      setGeocoded(null);
+      return;
+    }
+    setGeocoding(true);
+    const handle = setTimeout(async () => {
+      const res = await resolveZone(address);
+      if (res) {
+        setGeocoded(res.geo);
+        setZoneInfo(res.zoneInfo);
+      } else {
+        setGeocoded(null);
+        setZoneInfo(null);
+      }
+      setGeocoding(false);
+    }, 700);
+    return () => { clearTimeout(handle); setGeocoding(false); };
+  }, [address, addressValid]);
 
   const formatPrice = (p: number) =>
     p % 1 === 0 ? `${p} €` : `${p.toFixed(2).replace(".", ",")} €`;
@@ -94,15 +112,16 @@ export default function CartDrawer() {
     setDrawerOpen(false);
     setTimeout(() => {
       setPayMethod(null);
-      setSent(false);
+      setStep("form");
       setShowErrors(false);
     }, 400);
   };
 
   /* ── Build WhatsApp message — cleanly formatted ── */
-  const buildWAMessage = (method: PayMethod) => {
+  const buildWAMessage = (method: PayMethod, paid: boolean) => {
     const labels: Record<PayMethod, string> = {
       especes: "Espèces à la livraison",
+      carte:   "Carte à la livraison",
       lydia:   "Lydia",
       paylib:  "PayLib",
       wero:    "Wero",
@@ -110,13 +129,14 @@ export default function CartDrawer() {
 
     const sep = "━━━━━━━━━━━━━━━━━━";
     const sub = "──────────────────";
-    const total = formatPrice(getTotal());
+    const subT = formatPrice(subtotal);
+    const grandT = formatPrice(grandTotal);
     const lines: string[] = [];
 
     /* Header */
     lines.push(sep);
     lines.push("*CHEZ MAMAN JOLIE*");
-    lines.push("_Nouvelle commande_");
+    lines.push(paid ? "_Commande payée_ ✅" : "_Nouvelle commande_");
     lines.push(sep);
     lines.push("");
 
@@ -126,7 +146,13 @@ export default function CartDrawer() {
       lines.push(`• ${i.name}  _x${i.quantity}_  —  ${formatPrice(i.price * i.quantity)}`);
     });
     lines.push("");
-    lines.push(`*Total :*  *${total}*`);
+    lines.push(`Sous-total :  ${subT}`);
+    if (deliveryFee > 0) {
+      lines.push(`Livraison (Zone ${zoneInfo?.zone}) :  ${formatPrice(deliveryFee)}`);
+    } else if (zoneInfo?.zone === 1) {
+      lines.push(`Livraison (Zone 1) :  _Gratuite_`);
+    }
+    lines.push(`*Total :*  *${grandT}*`);
     lines.push("");
     lines.push(sub);
     lines.push("");
@@ -138,35 +164,46 @@ export default function CartDrawer() {
     lines.push("");
     lines.push("📍 *ADRESSE DE LIVRAISON*");
     address.split("\n").forEach(l => lines.push(l));
+    if (zoneInfo && geocoded) {
+      lines.push(`_Zone ${zoneInfo.zone} · ${zoneInfo.distanceKm.toFixed(1)} km de ${DEPART_LABEL}_`);
+    }
     lines.push("");
     lines.push(sub);
     lines.push("");
 
     /* Paiement */
-    lines.push(`💳 *PAIEMENT :  ${labels[method]}*`);
-    lines.push("");
-
-    if (method === "especes") {
-      lines.push("À régler directement au livreur.");
+    if (paid) {
+      lines.push(`✅ *PAIEMENT EFFECTUÉ*`);
+      lines.push(`Via ${labels[method]}  ·  ${grandT}`);
     } else {
-      lines.push(`📱 Numéro :  *${PHONE}*`);
+      lines.push(`💳 *PAIEMENT :  ${labels[method]}*`);
       lines.push("");
-      lines.push(`→ Envoyez *${total}* via ${labels[method]} au numéro ci-dessus.`);
+      if (method === "especes" || method === "carte") {
+        lines.push(`À régler au livreur (${method === "especes" ? "espèces" : "carte bancaire"}).`);
+      } else {
+        lines.push(`📱 Numéro :  *${PHONE}*`);
+        lines.push("");
+        lines.push(`→ Envoyez *${grandT}* via ${labels[method]} au numéro ci-dessus.`);
+      }
     }
 
     lines.push("");
     lines.push(sep);
     lines.push("");
-    lines.push("_Je confirme votre commande dès réception et vous communique le délai de livraison._");
+    lines.push(paid
+      ? "_Merci de confirmer la réception de mon paiement et le délai de livraison._"
+      : "_Je confirme votre commande dès réception et vous communique le délai de livraison._"
+    );
 
     return encodeURIComponent(lines.join("\n"));
   };
 
+  const isMobilePay = payMethod === "lydia" || payMethod === "paylib" || payMethod === "wero";
+
   const handleOrder = async () => {
-    /* Validate required fields before submitting */
+    /* Validate required fields */
     if (!formValid) {
       setShowErrors(true);
-      /* Scroll & focus the first missing field */
       if (!nomValid) {
         nomRef.current?.focus();
         nomRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -182,20 +219,32 @@ export default function CartDrawer() {
       return;
     }
 
+    /* Mobile payment (Lydia/PayLib/Wero): show payment interstitial first */
+    if (isMobilePay) {
+      setStep("payment");
+      return;
+    }
+
+    /* Espèces ou Carte → envoi direct */
+    await doSendOrder(false);
+  };
+
+  /* Appelé depuis "Envoyer" (espèces/carte) ou "J'ai payé" (Wero etc.) */
+  const doSendOrder = async (paid: boolean) => {
+    if (!payMethod) return;
     setSaving(true);
     try {
       await createOrder({
         items: items.map(i => ({ name: i.name, price: i.price, quantity: i.quantity, image: i.image })),
-        paymentMethod: payMethod!,
-        total: getTotal(),
+        paymentMethod: payMethod,
+        total: grandTotal,
       });
     } catch {}
     setSaving(false);
-    window.open(`https://wa.me/33744275428?text=${buildWAMessage(payMethod!)}`, "_blank");
-    setSent(true);
+    window.open(`https://wa.me/33744275428?text=${buildWAMessage(payMethod, paid)}`, "_blank");
+    setStep("sent");
   };
 
-  const isMobilePay = payMethod === "lydia" || payMethod === "paylib" || payMethod === "wero";
   const appName = payMethod === "lydia" ? "Lydia" : payMethod === "paylib" ? "PayLib" : payMethod === "wero" ? "Wero" : "";
 
   return (
@@ -417,11 +466,55 @@ export default function CartDrawer() {
                   {showErrors && !addressValid && (
                     <p className="text-[10px] text-red-400 mt-1">Adresse complète requise (rue, ville, code postal)</p>
                   )}
+
+                  {/* Indicateur de zone après géocodage */}
+                  {addressValid && (
+                    <div className="mt-2">
+                      {geocoding && (
+                        <p className="text-[10px] text-white/40 flex items-center gap-1.5">
+                          <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" className="opacity-25"/>
+                            <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="2" fill="none"/>
+                          </svg>
+                          Vérification de votre zone…
+                        </p>
+                      )}
+                      {!geocoding && zoneInfo && !zoneInfo.outOfRange && (
+                        <div className={`text-[10px] rounded-[5px] px-2 py-1.5 flex items-center gap-1.5 ${
+                          zoneInfo.zone === 1 ? "bg-emerald-500/10 text-emerald-300" :
+                          zoneInfo.zone === 2 ? "bg-sky-500/10 text-sky-300" :
+                                                 "bg-amber-500/10 text-amber-300"
+                        }`}>
+                          <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
+                          </svg>
+                          <span className="flex-1">
+                            Zone {zoneInfo.zone} · {zoneInfo.distanceKm.toFixed(1)} km de {DEPART} ·
+                            {" "}<span className="font-semibold">Livraison {zoneInfo.feeLabel.toLowerCase() === "gratuit" ? "gratuite" : zoneInfo.feeLabel}</span>
+                          </span>
+                        </div>
+                      )}
+                      {!geocoding && zoneInfo && zoneInfo.outOfRange && (
+                        <div className="text-[10px] rounded-[5px] px-2 py-1.5 bg-red-500/10 text-red-300 flex items-center gap-1.5">
+                          <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                          </svg>
+                          Hors zone de livraison ({zoneInfo.distanceKm.toFixed(1)} km — maximum 10 km)
+                        </div>
+                      )}
+                      {!geocoding && !zoneInfo && (
+                        <p className="text-[10px] text-white/40 mt-1">
+                          Adresse introuvable — vérifiez l&apos;orthographe ou ajoutez le code postal.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   <p className="text-[10px] text-white/30 mt-1 flex items-center gap-1">
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
-                    Livraison depuis {DEPART} &middot; zones tarifaires calculées à vol d&apos;oiseau
+                    Livraison depuis {DEPART} &middot; distance calculée automatiquement
                   </p>
                 </div>
               </div>
@@ -454,38 +547,21 @@ export default function CartDrawer() {
                 )}
               </div>
 
-              {/* ── Inline payment details (Lydia / PayLib / Wero) ── */}
+              {/* ── Note paiement sélectionné ── */}
               {isMobilePay && (
-                <div className={`glass rounded-[5px] p-4 space-y-2.5 border ${
-                  payMethod === "lydia"  ? "border-purple-500/20" :
-                  payMethod === "paylib" ? "border-sky-500/20"    :
-                                           "border-teal-500/20"
-                }`}>
-                  <div className="flex items-center gap-2">
-                    <span className={`w-6 h-6 rounded-[5px] flex items-center justify-center font-black text-xs ${
-                      payMethod === "lydia"  ? "bg-purple-500/15 text-purple-400" :
-                      payMethod === "paylib" ? "bg-sky-500/15 text-sky-400"       :
-                                               "bg-teal-500/15 text-teal-400"
-                    }`}>
-                      {appName[0]}
-                    </span>
-                    <h4 className="text-white text-xs font-bold">Numéro {appName}</h4>
-                  </div>
-                  <CopyRow label="" value={PHONE} copied={copied} onCopy={handleCopy}/>
-                  <p className="text-white/30 text-[10px]">
-                    Ouvrez {appName} après confirmation de la commande et envoyez{" "}
-                    <span className="text-primary font-semibold">{formatPrice(getTotal())}</span> à ce numéro.
-                  </p>
-                </div>
+                <p className="text-[11px] text-white/50 -mt-2 px-1">
+                  → Après clic, vous pourrez ouvrir {appName} pour effectuer le paiement avant d&apos;envoyer la commande.
+                </p>
               )}
-
-              {/* ── Cash note ── */}
               {payMethod === "especes" && (
-                <div className="glass rounded-[5px] p-4 border border-emerald-500/20">
-                  <p className="text-white/70 text-xs">
-                    Vous réglerez en espèces directement au livreur. Prévoyez l&apos;appoint si possible.
-                  </p>
-                </div>
+                <p className="text-[11px] text-white/50 -mt-2 px-1">
+                  → Vous réglerez en espèces au livreur. Prévoyez l&apos;appoint si possible.
+                </p>
+              )}
+              {payMethod === "carte" && (
+                <p className="text-[11px] text-white/50 -mt-2 px-1">
+                  → Vous réglerez par carte bancaire au livreur (TPE).
+                </p>
               )}
             </>
           )}
@@ -494,22 +570,85 @@ export default function CartDrawer() {
         {/* ── Footer / CTA ── */}
         {items.length > 0 && (
           <div className="px-6 py-5 border-t border-white/5 space-y-3">
-            {/* Total */}
-            <div className="flex items-center justify-between">
-              <span className="text-white/60 text-sm">Total</span>
-              <span className="text-2xl font-bold text-gradient">{formatPrice(getTotal())}</span>
+            {/* Total avec livraison */}
+            <div className="space-y-0.5">
+              {deliveryFee > 0 && zoneInfo?.zone && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-white/40">Sous-total</span>
+                  <span className="text-white/60">{formatPrice(subtotal)}</span>
+                </div>
+              )}
+              {zoneInfo && !zoneInfo.outOfRange && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-white/40">Livraison (Zone {zoneInfo.zone})</span>
+                  <span className={deliveryFee === 0 ? "text-emerald-400" : "text-white/60"}>
+                    {deliveryFee === 0 ? "Gratuite" : formatPrice(deliveryFee)}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-white/60 text-sm">Total</span>
+                <span className="text-2xl font-bold text-gradient">{formatPrice(grandTotal)}</span>
+              </div>
             </div>
 
-            {sent ? (
-              /* ── After order is sent ── */
+            {step === "payment" ? (
+              /* ── Étape paiement mobile (Lydia / PayLib / Wero) ── */
+              <div className="space-y-3">
+                <div className={`rounded-[5px] p-4 border ${
+                  payMethod === "wero"  ? "bg-teal-500/10 border-teal-500/30" :
+                  payMethod === "lydia" ? "bg-purple-500/10 border-purple-500/30" :
+                                           "bg-sky-500/10 border-sky-500/30"
+                }`}>
+                  <p className="text-white font-bold text-sm mb-1">Paiement {appName}</p>
+                  <p className="text-white/60 text-xs mb-3">
+                    Envoyez <span className="text-primary font-bold">{formatPrice(grandTotal)}</span> au numéro :
+                  </p>
+                  <div className="flex items-center justify-between bg-white/5 rounded-[5px] px-3 py-2 mb-3">
+                    <span className="text-white text-sm font-mono">{PHONE}</span>
+                    <button
+                      onClick={() => handleCopy(PHONE.replace(/\s/g, ""), "phone-pay")}
+                      className="text-white/40 hover:text-primary transition-colors"
+                    >
+                      {copied === "phone-pay"
+                        ? <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+                        : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                      }
+                    </button>
+                  </div>
+                  <a
+                    href={APP_URLS[payMethod as "lydia" | "paylib" | "wero"]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full text-center bg-white/10 hover:bg-white/15 text-white font-semibold py-3 rounded-[5px] text-sm transition-all"
+                  >
+                    Ouvrir {appName} →
+                  </a>
+                </div>
+                <button
+                  onClick={() => doSendOrder(true)}
+                  disabled={saving}
+                  className="flex items-center justify-center gap-2 w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold py-4 rounded-[5px] text-sm transition-all hover:scale-[1.02] shadow-lg shadow-[#25D366]/20 disabled:opacity-40"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
+                  </svg>
+                  {saving ? "Envoi..." : `J'ai payé · Confirmer la commande`}
+                </button>
+                <button onClick={() => setStep("form")} className="w-full text-white/40 hover:text-white text-xs py-2 transition-colors">
+                  ← Revenir au panier
+                </button>
+              </div>
+            ) : step === "sent" ? (
+              /* ── Commande envoyée ── */
               <div className="space-y-2">
                 <div className="flex items-start gap-2 bg-[#25D366]/10 border border-[#25D366]/20 rounded-[5px] p-3">
                   <svg className="w-4 h-4 text-[#25D366] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
                   </svg>
                   <p className="text-white/80 text-xs leading-relaxed">
-                    Commande envoyée sur WhatsApp avec toutes les infos de paiement.
-                    {payMethod !== "especes" && ` Effectuez le paiement via ${appName} après confirmation.`}
+                    Commande envoyée sur WhatsApp.
+                    {(payMethod === "especes" || payMethod === "carte") && ` Vous réglerez ${formatPrice(grandTotal)} au livreur.`}
                   </p>
                 </div>
                 <button onClick={handleClose} className="w-full text-white/50 hover:text-white text-xs py-2 transition-colors">
@@ -551,10 +690,12 @@ export default function CartDrawer() {
                   {saving
                     ? "Envoi..."
                     : formValid
-                      ? "Envoyer sur WhatsApp"
+                      ? (isMobilePay ? `Payer avec ${appName}` : "Envoyer sur WhatsApp")
                       : !minOrderValid
                         ? `Minimum ${MIN_ORDER} € pour commander`
-                        : "Complétez vos informations"}
+                        : !zoneValid && addressValid
+                          ? "Adresse hors zone"
+                          : "Complétez vos informations"}
                 </button>
                 <button onClick={clearCart} className="w-full text-white/30 hover:text-accent text-xs text-center py-1 transition-colors">
                   Vider le panier

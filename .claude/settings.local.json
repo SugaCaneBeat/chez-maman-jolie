@@ -49,7 +49,10 @@
       "Bash(node --env-file=.env.local -e ' *)",
       "Bash(curl -s http://localhost:3000/)",
       "Bash(python -c ' *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(node --env-file=.env.local scripts/migrate.mjs)",
+      "Bash(sort -t'-' -k5 -rn)",
+      "Bash(sort -t'/' -k1)"
     ]
   }
 }

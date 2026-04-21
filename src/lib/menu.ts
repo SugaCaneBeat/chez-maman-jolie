@@ -21,7 +21,7 @@ export interface MenuItem {
 export interface BoissonSubcategory {
   name: string;
   image?: string;
-  items: { name: string; price: number }[];
+  items: { id?: string; name: string; price: number; image?: string }[];
 }
 
 export interface FormuleComponent {
@@ -97,7 +97,12 @@ export async function getMenuData(): Promise<Category[]> {
           subcats.push({
             name: sub.name,
             image: sub.image,
-            items: (items || []).map(i => ({ name: i.name, price: Number(i.price) })),
+            items: (items || []).map(i => ({
+              id: i.id,
+              name: i.name,
+              price: Number(i.price),
+              image: i.image ?? undefined,
+            })),
           });
         }
 
