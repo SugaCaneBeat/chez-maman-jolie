@@ -10,42 +10,38 @@ const PHONE = "+33 7 44 27 54 28";
 const IBAN  = "FR76 XXXX XXXX XXXX XXXX XXXX XXX";
 const BIC   = "XXXXXXXX";
 const OWNER = "Chez Maman Jolie";
+const DEPART = "Paris 11ème";
 
 type PayMethod = "especes" | "virement" | "lydia" | "paylib" | "wero";
 
 const PAY_OPTIONS: { id: PayMethod; label: string; sub: string; color: string; textColor: string }[] = [
-  { id: "especes", label: "Espèces",  sub: "À la livraison",  color: "bg-emerald-500/15", textColor: "text-emerald-400" },
-  { id: "virement",label: "Virement", sub: "IBAN bancaire",   color: "bg-blue-500/15",    textColor: "text-blue-400"    },
-  { id: "lydia",   label: "Lydia",    sub: PHONE,             color: "bg-purple-500/15",  textColor: "text-purple-400"  },
-  { id: "paylib",  label: "PayLib",   sub: PHONE,             color: "bg-sky-500/15",     textColor: "text-sky-400"     },
-  { id: "wero",    label: "Wero",     sub: PHONE,             color: "bg-teal-500/15",    textColor: "text-teal-400"    },
+  { id: "especes", label: "Espèces",  sub: "À la livraison", color: "bg-emerald-500/15", textColor: "text-emerald-400" },
+  { id: "virement",label: "Virement", sub: "IBAN bancaire",  color: "bg-blue-500/15",    textColor: "text-blue-400"    },
+  { id: "lydia",   label: "Lydia",    sub: "Mobile",          color: "bg-purple-500/15",  textColor: "text-purple-400"  },
+  { id: "paylib",  label: "PayLib",   sub: "Mobile",          color: "bg-sky-500/15",     textColor: "text-sky-400"     },
+  { id: "wero",    label: "Wero",     sub: "Mobile",          color: "bg-teal-500/15",    textColor: "text-teal-400"    },
 ];
-
-/* ─── Copy button ─── */
-function CopyBtn({ value, label, copied, onCopy }: {
-  value: string; label: string; copied: string | null; onCopy: (v: string, l: string) => void;
-}) {
-  const ok = copied === label;
-  return (
-    <button onClick={() => onCopy(value, label)} className="text-white/40 hover:text-primary transition-colors flex-shrink-0">
-      {ok
-        ? <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
-        : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-      }
-    </button>
-  );
-}
 
 /* ─── Copy row ─── */
 function CopyRow({ label, value, mono, copied, onCopy }: {
   label: string; value: string; mono?: boolean; copied: string | null; onCopy: (v: string, l: string) => void;
 }) {
+  const ok = copied === label;
   return (
     <div>
-      <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1">{label}</p>
+      {label && <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1">{label}</p>}
       <div className="flex items-center justify-between bg-white/5 rounded-[5px] px-3 py-2 gap-3">
         <span className={`text-white text-sm truncate ${mono ? "font-mono" : "font-medium"}`}>{value}</span>
-        <CopyBtn value={value.replace(/\s/g, "")} label={label} copied={copied} onCopy={onCopy} />
+        <button
+          onClick={() => onCopy(value.replace(/\s/g, ""), label)}
+          className="text-white/40 hover:text-primary transition-colors flex-shrink-0"
+          aria-label={`Copier ${label || value}`}
+        >
+          {ok
+            ? <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+            : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          }
+        </button>
       </div>
     </div>
   );
@@ -54,11 +50,12 @@ function CopyRow({ label, value, mono, copied, onCopy }: {
 export default function CartDrawer() {
   const { items, isDrawerOpen, setDrawerOpen, updateQuantity, removeItem, clearCart, getTotal, getCount } = useCart();
 
-  /* ── Step: "cart" → "pay-details" ── */
-  const [step, setStep] = useState<"cart" | "pay-details">("cart");
   const [payMethod, setPayMethod] = useState<PayMethod | null>(null);
+  const [address, setAddress]     = useState("");
+  const [nom, setNom]             = useState("");
   const [copied, setCopied]       = useState<string | null>(null);
   const [saving, setSaving]       = useState(false);
+  const [sent, setSent]           = useState(false);
 
   const formatPrice = (p: number) =>
     p % 1 === 0 ? `${p} €` : `${p.toFixed(2).replace(".", ",")} €`;
@@ -71,29 +68,47 @@ export default function CartDrawer() {
 
   const handleClose = () => {
     setDrawerOpen(false);
-    setTimeout(() => { setStep("cart"); setPayMethod(null); }, 400);
+    setTimeout(() => { setPayMethod(null); setSent(false); }, 400);
   };
 
-  /* ── Build WhatsApp order message ── */
+  /* ── Build comprehensive WhatsApp message ── */
   const buildWAMessage = (method: PayMethod) => {
-    const methodLabels: Record<PayMethod, string> = {
+    const labels: Record<PayMethod, string> = {
       especes:  "Espèces à la livraison",
       virement: "Virement bancaire",
       lydia:    "Lydia",
       paylib:   "PayLib",
       wero:     "Wero",
     };
-    let msg = "🛒 *Commande Chez Maman Jolie*\n\n";
+
+    let msg = "🛒 *Nouvelle commande — Chez Maman Jolie*\n\n";
+    msg += "*Articles :*\n";
     items.forEach(i => {
       msg += `• ${i.name} x${i.quantity} — ${formatPrice(i.price * i.quantity)}\n`;
     });
-    msg += `\n💰 *Total : ${formatPrice(getTotal())}*`;
-    msg += `\n💳 Paiement : ${methodLabels[method]}`;
-    msg += "\n\n📍 Merci de confirmer l'adresse de livraison.";
+
+    msg += `\n💰 *Total : ${formatPrice(getTotal())}*\n`;
+    msg += `💳 Paiement : *${labels[method]}*\n`;
+
+    /* Payment instructions inside the message itself */
+    if (method === "virement") {
+      msg += `\n🏦 *Coordonnées bancaires :*\n`;
+      msg += `Titulaire : ${OWNER}\n`;
+      msg += `IBAN : ${IBAN}\n`;
+      msg += `BIC : ${BIC}\n`;
+    } else if (method === "lydia" || method === "paylib" || method === "wero") {
+      msg += `\n📱 *Numéro ${labels[method]} :* ${PHONE}\n`;
+      msg += `Envoyez ${formatPrice(getTotal())} via ${labels[method]} au numéro ci-dessus.\n`;
+    }
+
+    /* Customer info */
+    msg += `\n👤 *Client :* ${nom ? nom : "_à préciser_"}\n`;
+    msg += `📍 *Adresse de livraison :*\n${address ? address : "_à préciser_"}\n`;
+
+    msg += `\n_Je confirme votre commande dès réception et vous donne le délai de livraison._`;
     return encodeURIComponent(msg);
   };
 
-  /* ── Order via WhatsApp then go to payment details ── */
   const handleOrder = async () => {
     if (!payMethod) return;
     setSaving(true);
@@ -106,10 +121,11 @@ export default function CartDrawer() {
     } catch {}
     setSaving(false);
     window.open(`https://wa.me/33744275428?text=${buildWAMessage(payMethod)}`, "_blank");
-    if (payMethod !== "especes") setStep("pay-details");
+    setSent(true);
   };
 
   const isMobilePay = payMethod === "lydia" || payMethod === "paylib" || payMethod === "wero";
+  const appName = payMethod === "lydia" ? "Lydia" : payMethod === "paylib" ? "PayLib" : payMethod === "wero" ? "Wero" : "";
 
   return (
     <>
@@ -130,24 +146,10 @@ export default function CartDrawer() {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-white/5">
           <div>
-            {step === "pay-details" ? (
-              <button
-                onClick={() => setStep("cart")}
-                className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
-                </svg>
-                <span className="text-sm">Retour au panier</span>
-              </button>
-            ) : (
-              <>
-                <h2 className="font-heading text-xl font-bold text-white">Mon Panier</h2>
-                <p className="text-white/40 text-xs mt-0.5">
-                  {getCount()} {getCount() > 1 ? "articles" : "article"}
-                </p>
-              </>
-            )}
+            <h2 className="font-heading text-xl font-bold text-white">Mon Panier</h2>
+            <p className="text-white/40 text-xs mt-0.5">
+              {getCount()} {getCount() > 1 ? "articles" : "article"}
+            </p>
           </div>
           <button
             onClick={handleClose}
@@ -160,23 +162,22 @@ export default function CartDrawer() {
           </button>
         </div>
 
-        {/* ══════════════════════════════════════════
-            STEP 1 — CART + payment method selection
-            ══════════════════════════════════════════ */}
-        {step === "cart" && (
-          <>
-            {/* Items */}
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-              {items.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center">
-                  <svg className="w-16 h-16 text-white/20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
-                  </svg>
-                  <p className="text-white/40 text-sm">Votre panier est vide</p>
-                  <p className="text-white/20 text-xs mt-1">Ajoutez des plats depuis la carte</p>
-                </div>
-              ) : (
-                items.map((item) => (
+        {/* ── Scrollable content ── */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          {/* Items */}
+          {items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center py-20">
+              <svg className="w-16 h-16 text-white/20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+              </svg>
+              <p className="text-white/40 text-sm">Votre panier est vide</p>
+              <p className="text-white/20 text-xs mt-1">Ajoutez des plats depuis la carte</p>
+            </div>
+          ) : (
+            <>
+              {/* ── Items list ── */}
+              <div className="space-y-3">
+                {items.map((item) => (
                   <div key={item.id} className="glass rounded-[5px] p-4 flex gap-4">
                     {item.image && (
                       <div className="relative w-16 h-16 rounded-[5px] overflow-hidden flex-shrink-0">
@@ -203,43 +204,149 @@ export default function CartDrawer() {
                       {formatPrice(item.price * item.quantity)}
                     </div>
                   </div>
-                ))
+                ))}
+              </div>
+
+              {/* ── Customer info ── */}
+              <div className="glass rounded-[5px] p-4 space-y-3">
+                <h4 className="text-[10px] text-white/40 uppercase tracking-widest font-bold">
+                  Vos informations
+                </h4>
+                <div>
+                  <label className="block text-[10px] text-white/30 uppercase tracking-wider mb-1">Nom complet</label>
+                  <input
+                    type="text"
+                    value={nom}
+                    onChange={(e) => setNom(e.target.value)}
+                    placeholder="Prénom Nom"
+                    className="w-full bg-white/5 rounded-[5px] px-3 py-2 text-white text-sm focus:outline-none focus:border-primary/50 border border-white/5 placeholder:text-white/20"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-white/30 uppercase tracking-wider mb-1">Adresse de livraison</label>
+                  <textarea
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="15 rue du Temple, 75011 Paris&#10;Code d'accès, étage…"
+                    rows={2}
+                    className="w-full bg-white/5 rounded-[5px] px-3 py-2 text-white text-sm focus:outline-none focus:border-primary/50 border border-white/5 placeholder:text-white/20 resize-none"
+                  />
+                  <p className="text-[10px] text-white/30 mt-1 flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Livraison depuis {DEPART} &middot; zones tarifaires calculées à vol d&apos;oiseau
+                  </p>
+                </div>
+              </div>
+
+              {/* ── Payment method ── */}
+              <div>
+                <p className="text-[10px] text-white/40 uppercase tracking-widest mb-2 font-bold">Mode de paiement</p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {PAY_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={() => setPayMethod(opt.id)}
+                      className={`rounded-[5px] px-2 py-2.5 text-center transition-all border ${
+                        payMethod === opt.id
+                          ? `${opt.color} ${opt.textColor} border-current/40 scale-[1.02]`
+                          : "bg-white/5 text-white/50 border-white/5 hover:bg-white/8"
+                      }`}
+                    >
+                      <span className="block text-xs font-bold leading-tight">{opt.label}</span>
+                      <span className={`block text-[9px] mt-0.5 leading-tight ${payMethod === opt.id ? "opacity-80" : "opacity-40"}`}>
+                        {opt.sub}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── Inline payment details (Virement) ── */}
+              {payMethod === "virement" && (
+                <div className="glass rounded-[5px] p-4 space-y-2.5 border border-blue-500/20">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                    <h4 className="text-white text-xs font-bold">Coordonnées bancaires</h4>
+                  </div>
+                  <CopyRow label="Titulaire" value={OWNER}     copied={copied} onCopy={handleCopy}/>
+                  <CopyRow label="IBAN"      value={IBAN} mono copied={copied} onCopy={handleCopy}/>
+                  <CopyRow label="BIC"       value={BIC}  mono copied={copied} onCopy={handleCopy}/>
+                  <p className="text-white/30 text-[10px]">
+                    Les coordonnées seront aussi dans le message WhatsApp. Mentionnez votre nom en référence.
+                  </p>
+                </div>
               )}
+
+              {/* ── Inline payment details (Lydia / PayLib / Wero) ── */}
+              {isMobilePay && (
+                <div className={`glass rounded-[5px] p-4 space-y-2.5 border ${
+                  payMethod === "lydia"  ? "border-purple-500/20" :
+                  payMethod === "paylib" ? "border-sky-500/20"    :
+                                           "border-teal-500/20"
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-6 h-6 rounded-[5px] flex items-center justify-center font-black text-xs ${
+                      payMethod === "lydia"  ? "bg-purple-500/15 text-purple-400" :
+                      payMethod === "paylib" ? "bg-sky-500/15 text-sky-400"       :
+                                               "bg-teal-500/15 text-teal-400"
+                    }`}>
+                      {appName[0]}
+                    </span>
+                    <h4 className="text-white text-xs font-bold">Numéro {appName}</h4>
+                  </div>
+                  <CopyRow label="" value={PHONE} copied={copied} onCopy={handleCopy}/>
+                  <p className="text-white/30 text-[10px]">
+                    Ouvrez {appName} après confirmation de la commande et envoyez{" "}
+                    <span className="text-primary font-semibold">{formatPrice(getTotal())}</span> à ce numéro.
+                  </p>
+                </div>
+              )}
+
+              {/* ── Cash note ── */}
+              {payMethod === "especes" && (
+                <div className="glass rounded-[5px] p-4 border border-emerald-500/20">
+                  <p className="text-white/70 text-xs">
+                    Vous réglerez en espèces directement au livreur. Prévoyez l&apos;appoint si possible.
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* ── Footer / CTA ── */}
+        {items.length > 0 && (
+          <div className="px-6 py-5 border-t border-white/5 space-y-3">
+            {/* Total */}
+            <div className="flex items-center justify-between">
+              <span className="text-white/60 text-sm">Total</span>
+              <span className="text-2xl font-bold text-gradient">{formatPrice(getTotal())}</span>
             </div>
 
-            {/* Footer */}
-            {items.length > 0 && (
-              <div className="px-6 py-5 border-t border-white/5 space-y-4">
-                {/* Total */}
-                <div className="flex items-center justify-between">
-                  <span className="text-white/60 text-sm">Total</span>
-                  <span className="text-2xl font-bold text-gradient">{formatPrice(getTotal())}</span>
+            {sent ? (
+              /* ── After order is sent ── */
+              <div className="space-y-2">
+                <div className="flex items-start gap-2 bg-[#25D366]/10 border border-[#25D366]/20 rounded-[5px] p-3">
+                  <svg className="w-4 h-4 text-[#25D366] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
+                  </svg>
+                  <p className="text-white/80 text-xs leading-relaxed">
+                    Commande envoyée sur WhatsApp avec toutes les infos de paiement.
+                    {payMethod !== "especes" && ` Effectuez le paiement via ${
+                      payMethod === "virement" ? "virement" : appName
+                    } après confirmation.`}
+                  </p>
                 </div>
-
-                {/* Payment method selection */}
-                <div>
-                  <p className="text-[10px] text-white/40 uppercase tracking-widest mb-2">Mode de paiement</p>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {PAY_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.id}
-                        onClick={() => setPayMethod(opt.id)}
-                        className={`rounded-[5px] px-2 py-2.5 text-center transition-all border ${
-                          payMethod === opt.id
-                            ? `${opt.color} ${opt.textColor} border-current/40 scale-[1.02]`
-                            : "bg-white/5 text-white/50 border-white/5 hover:bg-white/8"
-                        }`}
-                      >
-                        <span className="block text-xs font-bold leading-tight">{opt.label}</span>
-                        <span className={`block text-[9px] mt-0.5 leading-tight ${payMethod === opt.id ? "opacity-70" : "opacity-40"}`}>
-                          {opt.id === "especes" ? "À la livraison" : opt.id === "virement" ? "IBAN" : "Tél."}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Commander via WhatsApp */}
+                <button onClick={handleClose} className="w-full text-white/50 hover:text-white text-xs py-2 transition-colors">
+                  Fermer
+                </button>
+              </div>
+            ) : (
+              <>
                 <button
                   onClick={handleOrder}
                   disabled={saving || !payMethod}
@@ -248,118 +355,13 @@ export default function CartDrawer() {
                   <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                   </svg>
-                  {saving ? "Envoi..." : payMethod ? "Commander via WhatsApp" : "Choisir un paiement"}
+                  {saving ? "Envoi..." : !payMethod ? "Choisir un paiement" : "Envoyer sur WhatsApp"}
                 </button>
-
                 <button onClick={clearCart} className="w-full text-white/30 hover:text-accent text-xs text-center py-1 transition-colors">
                   Vider le panier
                 </button>
-              </div>
+              </>
             )}
-          </>
-        )}
-
-        {/* ══════════════════════════════════════════
-            STEP 2 — PAYMENT DETAILS
-            (shown after WhatsApp is opened, if not cash)
-            ══════════════════════════════════════════ */}
-        {step === "pay-details" && (
-          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
-            {/* Status banner */}
-            <div className="glass rounded-[5px] p-4 flex items-start gap-3">
-              <div className="w-8 h-8 rounded-[5px] bg-[#25D366]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg className="w-4 h-4 text-[#25D366]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
-                </svg>
-              </div>
-              <div>
-                <p className="text-white text-sm font-semibold">Commande envoyée sur WhatsApp</p>
-                <p className="text-white/40 text-xs mt-0.5">Il reste à effectuer votre paiement ci-dessous.</p>
-              </div>
-            </div>
-
-            {/* Amount due */}
-            <div className="text-center">
-              <p className="text-white/40 text-xs uppercase tracking-widest mb-1">Montant à régler</p>
-              <p className="text-3xl font-bold text-gradient">{formatPrice(getTotal())}</p>
-            </div>
-
-            {/* ── Virement bancaire ── */}
-            {payMethod === "virement" && (
-              <div className="glass rounded-[5px] p-5 space-y-3">
-                <div className="flex items-center gap-3 mb-1">
-                  <div className="w-9 h-9 bg-blue-500/15 rounded-[5px] flex items-center justify-center">
-                    <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                    </svg>
-                  </div>
-                  <h4 className="font-bold text-white text-sm">Virement bancaire</h4>
-                </div>
-                <CopyRow label="Titulaire" value={OWNER}        copied={copied} onCopy={handleCopy}/>
-                <CopyRow label="IBAN"      value={IBAN}   mono  copied={copied} onCopy={handleCopy}/>
-                <CopyRow label="BIC"       value={BIC}    mono  copied={copied} onCopy={handleCopy}/>
-                <p className="text-white/20 text-[10px]">Mentionnez votre nom en référence du virement</p>
-              </div>
-            )}
-
-            {/* ── Lydia / PayLib / Wero ── */}
-            {isMobilePay && (
-              <div className="glass rounded-[5px] p-5 space-y-3">
-                {/* Active app badge */}
-                <div className="flex items-center gap-3 mb-1">
-                  {payMethod === "lydia" && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-9 h-9 bg-purple-500/15 rounded-[5px] flex items-center justify-center">
-                        <span className="text-purple-400 font-black text-base">L</span>
-                      </div>
-                      <h4 className="font-bold text-white text-sm">Lydia</h4>
-                    </div>
-                  )}
-                  {payMethod === "paylib" && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-9 h-9 bg-sky-500/15 rounded-[5px] flex items-center justify-center">
-                        <span className="text-sky-400 font-black text-base">P</span>
-                      </div>
-                      <h4 className="font-bold text-white text-sm">PayLib</h4>
-                    </div>
-                  )}
-                  {payMethod === "wero" && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-9 h-9 bg-teal-500/15 rounded-[5px] flex items-center justify-center">
-                        <span className="text-teal-400 font-black text-base">W</span>
-                      </div>
-                      <h4 className="font-bold text-white text-sm">Wero</h4>
-                    </div>
-                  )}
-                </div>
-                <CopyRow label="Numéro associé" value={PHONE} copied={copied} onCopy={handleCopy}/>
-                <p className="text-white/20 text-[10px]">
-                  Ouvrez {payMethod === "lydia" ? "Lydia" : payMethod === "paylib" ? "PayLib" : "Wero"} et envoyez{" "}
-                  <span className="text-primary font-semibold">{formatPrice(getTotal())}</span> au numéro ci-dessus
-                </p>
-              </div>
-            )}
-
-            {/* Confirm on WhatsApp once paid */}
-            <a
-              href={`https://wa.me/33744275428?text=${encodeURIComponent(
-                `✅ *Paiement effectué — Chez Maman Jolie*\n\n` +
-                items.map(i => `• ${i.name} x${i.quantity}`).join("\n") +
-                `\n\n💰 ${formatPrice(getTotal())} — réglé par ${
-                  payMethod === "virement" ? "virement bancaire" :
-                  payMethod === "lydia"    ? "Lydia" :
-                  payMethod === "paylib"   ? "PayLib" : "Wero"
-                }\n\n📍 Merci de confirmer la livraison.`
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex items-center justify-center gap-3 w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold py-4 rounded-[5px] text-sm transition-all hover:scale-[1.02] shadow-lg shadow-[#25D366]/20"
-            >
-              <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-              </svg>
-              Confirmer le paiement sur WhatsApp
-            </a>
           </div>
         )}
       </div>

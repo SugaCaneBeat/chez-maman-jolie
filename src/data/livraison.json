@@ -1,4 +1,6 @@
 {
+  "depart": "Paris 11ème",
+  "notePickup": "Livraison uniquement — pas de retrait sur place pour le moment",
   "zones": [
     { "name": "Zone 1 — Moins de 3 km", "frais": "Gratuit dès 25 €", "delai": "~30 min" },
     { "name": "Zone 2 — 3 à 6 km", "frais": "2,50 € dès 20 €", "delai": "~40 min" },

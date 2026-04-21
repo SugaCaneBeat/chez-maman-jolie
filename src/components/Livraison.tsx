@@ -34,6 +34,8 @@ interface TunnelStep {
 }
 
 interface LivraisonData {
+  depart?: string;
+  notePickup?: string;
   zones: Zone[];
   minimum: string;
   paiement: string[];
@@ -86,8 +88,19 @@ export default function Livraison({ data }: { data: LivraisonData }) {
         {/* Zones */}
         <ScrollAnimation delay={200}>
           <div className="glass rounded-[5px] overflow-hidden mb-8">
-            <div className="px-6 sm:px-8 py-5 border-b border-white/5">
-              <h3 className="font-heading text-primary text-lg font-bold">Zones de livraison</h3>
+            <div className="px-6 sm:px-8 py-5 border-b border-white/5 flex items-start justify-between gap-4">
+              <div>
+                <h3 className="font-heading text-primary text-lg font-bold">Zones de livraison</h3>
+                {data.depart && (
+                  <p className="text-xs text-white/40 mt-1 flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 text-primary/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    Distances mesurées depuis <span className="text-white/70 font-semibold">{data.depart}</span>
+                  </p>
+                )}
+              </div>
             </div>
             <div className="divide-y divide-white/5">
               {data.zones.map((zone) => (
@@ -100,6 +113,16 @@ export default function Livraison({ data }: { data: LivraisonData }) {
                 </div>
               ))}
             </div>
+            {data.notePickup && (
+              <div className="px-6 sm:px-8 py-3 border-t border-white/5 bg-white/3">
+                <p className="text-[11px] text-white/40 flex items-center gap-1.5">
+                  <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  {data.notePickup}
+                </p>
+              </div>
+            )}
           </div>
         </ScrollAnimation>
 
