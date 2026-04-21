@@ -13,14 +13,13 @@ const DEPART = "Paris 11ème";
 /* Minimum de commande */
 const MIN_ORDER = 25;
 
-type PayMethod = "especes" | "carte" | "lydia" | "paylib" | "wero";
+type PayMethod = "carte" | "lydia" | "paylib" | "wero";
 
 const PAY_OPTIONS: { id: PayMethod; label: string; sub: string; color: string; textColor: string }[] = [
-  { id: "especes", label: "Espèces", sub: "À la livraison", color: "bg-emerald-500/15", textColor: "text-emerald-400" },
-  { id: "carte",   label: "Carte",   sub: "À la livraison", color: "bg-indigo-500/15",  textColor: "text-indigo-400"  },
-  { id: "lydia",   label: "Lydia",   sub: "Mobile",         color: "bg-purple-500/15",  textColor: "text-purple-400"  },
-  { id: "paylib",  label: "PayLib",  sub: "Mobile",         color: "bg-sky-500/15",     textColor: "text-sky-400"     },
-  { id: "wero",    label: "Wero",    sub: "Mobile",         color: "bg-teal-500/15",    textColor: "text-teal-400"    },
+  { id: "carte",  label: "Carte",  sub: "À la livraison", color: "bg-indigo-500/15", textColor: "text-indigo-400" },
+  { id: "lydia",  label: "Lydia",  sub: "Mobile",         color: "bg-purple-500/15", textColor: "text-purple-400" },
+  { id: "paylib", label: "PayLib", sub: "Mobile",         color: "bg-sky-500/15",    textColor: "text-sky-400"    },
+  { id: "wero",   label: "Wero",   sub: "Mobile",         color: "bg-teal-500/15",   textColor: "text-teal-400"   },
 ];
 
 /* ─── Deep-links / URLs des apps de paiement mobile ─── */
@@ -49,6 +48,7 @@ export default function CartDrawer() {
 
   /* ── Flow step: "form" → "payment" → "sent" ── */
   const [step, setStep] = useState<"form" | "payment" | "sent">("form");
+  const [orderRef, setOrderRef] = useState<{ id: string; number: number } | null>(null);
 
   /* ── Refs for scroll-to-missing-field ── */
   const nomRef     = useRef<HTMLInputElement>(null);
@@ -114,17 +114,17 @@ export default function CartDrawer() {
       setPayMethod(null);
       setStep("form");
       setShowErrors(false);
+      setOrderRef(null);
     }, 400);
   };
 
   /* ── Build WhatsApp message — cleanly formatted ── */
-  const buildWAMessage = (method: PayMethod, paid: boolean) => {
+  const buildWAMessage = (method: PayMethod, paid: boolean, ref: { id: string; number: number } | null) => {
     const labels: Record<PayMethod, string> = {
-      especes: "Espèces à la livraison",
-      carte:   "Carte à la livraison",
-      lydia:   "Lydia",
-      paylib:  "PayLib",
-      wero:    "Wero",
+      carte:  "Carte à la livraison",
+      lydia:  "Lydia",
+      paylib: "PayLib",
+      wero:   "Wero",
     };
 
     const sep = "━━━━━━━━━━━━━━━━━━";
@@ -136,7 +136,8 @@ export default function CartDrawer() {
     /* Header */
     lines.push(sep);
     lines.push("*CHEZ MAMAN JOLIE*");
-    lines.push(paid ? "_Commande payée_ ✅" : "_Nouvelle commande_");
+    if (ref) lines.push(`_Commande #${ref.number}_`);
+    lines.push(paid ? "✅ *PAIEMENT EFFECTUÉ* — _à préparer_" : "_Nouvelle commande_");
     lines.push(sep);
     lines.push("");
 
@@ -173,27 +174,21 @@ export default function CartDrawer() {
 
     /* Paiement */
     if (paid) {
-      lines.push(`✅ *PAIEMENT EFFECTUÉ*`);
-      lines.push(`Via ${labels[method]}  ·  ${grandT}`);
-    } else {
-      lines.push(`💳 *PAIEMENT :  ${labels[method]}*`);
+      lines.push(`💳 Payé via *${labels[method]}*  ·  ${grandT}`);
       lines.push("");
-      if (method === "especes" || method === "carte") {
-        lines.push(`À régler au livreur (${method === "especes" ? "espèces" : "carte bancaire"}).`);
-      } else {
-        lines.push(`📱 Numéro :  *${PHONE}*`);
-        lines.push("");
-        lines.push(`→ Envoyez *${grandT}* via ${labels[method]} au numéro ci-dessus.`);
-      }
+      lines.push("_Merci de préparer la commande._");
+    } else {
+      lines.push(`💳 *Paiement : ${labels[method]}*`);
+      lines.push(`À régler au livreur par carte bancaire (TPE).`);
     }
 
     lines.push("");
     lines.push(sep);
-    lines.push("");
-    lines.push(paid
-      ? "_Merci de confirmer la réception de mon paiement et le délai de livraison._"
-      : "_Je confirme votre commande dès réception et vous communique le délai de livraison._"
-    );
+    if (ref) {
+      const trackUrl = `https://chezmamanjolie.com/commande/${ref.id}`;
+      lines.push("");
+      lines.push(`🔗 Suivi client : ${trackUrl}`);
+    }
 
     return encodeURIComponent(lines.join("\n"));
   };
@@ -229,19 +224,30 @@ export default function CartDrawer() {
     await doSendOrder(false);
   };
 
-  /* Appelé depuis "Envoyer" (espèces/carte) ou "J'ai payé" (Wero etc.) */
+  /* Appelé depuis "Envoyer" (carte) ou "J'ai payé" (Wero etc.) */
   const doSendOrder = async (paid: boolean) => {
     if (!payMethod) return;
     setSaving(true);
+    let ref: { id: string; number: number } | null = null;
     try {
-      await createOrder({
+      const res = await createOrder({
         items: items.map(i => ({ name: i.name, price: i.price, quantity: i.quantity, image: i.image })),
+        customerName: nom,
+        customerPhone: tel,
+        customerAddress: address,
         paymentMethod: payMethod,
+        paid,
         total: grandTotal,
       });
+      if (res.success && res.orderId && res.orderNumber) {
+        ref = { id: res.orderId, number: res.orderNumber };
+        setOrderRef(ref);
+      }
     } catch {}
     setSaving(false);
-    window.open(`https://wa.me/33744275428?text=${buildWAMessage(payMethod, paid)}`, "_blank");
+    window.open(`https://wa.me/33744275428?text=${buildWAMessage(payMethod, paid, ref)}`, "_blank");
+    /* clear cart once the order is placed */
+    clearCart();
     setStep("sent");
   };
 
@@ -553,11 +559,6 @@ export default function CartDrawer() {
                   → Après clic, vous pourrez ouvrir {appName} pour effectuer le paiement avant d&apos;envoyer la commande.
                 </p>
               )}
-              {payMethod === "especes" && (
-                <p className="text-[11px] text-white/50 -mt-2 px-1">
-                  → Vous réglerez en espèces au livreur. Prévoyez l&apos;appoint si possible.
-                </p>
-              )}
               {payMethod === "carte" && (
                 <p className="text-[11px] text-white/50 -mt-2 px-1">
                   → Vous réglerez par carte bancaire au livreur (TPE).
@@ -640,17 +641,44 @@ export default function CartDrawer() {
                 </button>
               </div>
             ) : step === "sent" ? (
-              /* ── Commande envoyée ── */
-              <div className="space-y-2">
-                <div className="flex items-start gap-2 bg-[#25D366]/10 border border-[#25D366]/20 rounded-[5px] p-3">
-                  <svg className="w-4 h-4 text-[#25D366] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
-                  </svg>
-                  <p className="text-white/80 text-xs leading-relaxed">
-                    Commande envoyée sur WhatsApp.
-                    {(payMethod === "especes" || payMethod === "carte") && ` Vous réglerez ${formatPrice(grandTotal)} au livreur.`}
+              /* ── Commande envoyée : confirmation client ── */
+              <div className="space-y-3">
+                <div className="bg-gradient-to-br from-emerald-500/10 to-primary/5 border border-emerald-500/30 rounded-[5px] p-4 text-center">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
+                    </svg>
+                  </div>
+                  <p className="font-heading text-white font-bold text-lg mb-1">
+                    Commande prise en compte
+                  </p>
+                  {orderRef && (
+                    <p className="text-primary font-bold text-xl mb-2">
+                      #{orderRef.number}
+                    </p>
+                  )}
+                  <p className="text-white/60 text-xs leading-relaxed">
+                    Votre commande a bien été transmise au restaurant.
+                    {payMethod === "carte"
+                      ? ` Vous réglerez ${formatPrice(grandTotal)} au livreur par carte.`
+                      : " Le paiement est confirmé, nous préparons vos plats."}
                   </p>
                 </div>
+
+                {orderRef && (
+                  <a
+                    href={`/commande/${orderRef.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full bg-primary hover:bg-primary-light text-dark font-bold py-3 rounded-[5px] text-sm transition-all"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
+                    Suivre ma commande
+                  </a>
+                )}
+
                 <button onClick={handleClose} className="w-full text-white/50 hover:text-white text-xs py-2 transition-colors">
                   Fermer
                 </button>

@@ -1,25 +1,26 @@
 import ScrollAnimation from "./ScrollAnimation";
 import CommanderButton from "./CommanderButton";
 
-/* ── 2D step icons ── */
+/* ── 2D step icons (ordre: Choisir / Payer / Notifier / Préparation / Livraison) ── */
 const STEP_ICONS = [
   /* cart — choisir */
   <svg key="cart" className="w-8 h-8 sm:w-10 sm:h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
   </svg>,
-  /* chat bubble — contacter */
-  <svg key="chat" className="w-8 h-8 sm:w-10 sm:h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-  </svg>,
-  /* check circle — confirmer */
-  <svg key="check" className="w-8 h-8 sm:w-10 sm:h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>,
   /* card — payer */
   <svg key="card" className="w-8 h-8 sm:w-10 sm:h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
   </svg>,
-  /* delivery truck — recevoir */
+  /* whatsapp bubble — notifier */
+  <svg key="chat" className="w-8 h-8 sm:w-10 sm:h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+  </svg>,
+  /* cooking pot — préparation */
+  <svg key="pot" className="w-8 h-8 sm:w-10 sm:h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 10h14v8a2 2 0 01-2 2H7a2 2 0 01-2-2v-8z"/>
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M8 6c0-1 .5-2 2-2s1 1 2 1 1-1 2-1 2 1 2 2"/>
+  </svg>,
+  /* delivery truck — livraison */
   <svg key="truck" className="w-8 h-8 sm:w-10 sm:h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10m0 0h10m4 0h1a1 1 0 001-1v-3.65a1 1 0 00-.22-.624l-3.48-4.35A1 1 0 0014.52 6H13" />
@@ -48,6 +49,7 @@ interface LivraisonData {
   horaires: {
     semaine: { jours: string; heures: string };
     weekend: { jours: string; heures: string };
+    ferme?:  { jours: string; heures: string };
   };
   tunnel: TunnelStep[];
 }
@@ -173,6 +175,12 @@ export default function Livraison({ data }: { data: LivraisonData }) {
                 {data.horaires.semaine.jours} : {data.horaires.semaine.heures}
                 <br />
                 {data.horaires.weekend.jours} : {data.horaires.weekend.heures}
+                {data.horaires.ferme && (
+                  <>
+                    <br />
+                    <span className="text-red-400/70">{data.horaires.ferme.jours} : {data.horaires.ferme.heures}</span>
+                  </>
+                )}
               </p>
             </div>
           </div>

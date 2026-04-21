@@ -7,16 +7,17 @@
     { "name": "Zone 3 — 6 à 10 km",     "frais": "4,50 € dès 30 €", "fraisBas": "Sinon : 6 €",        "delai": "~50 min" }
   ],
   "minimum": "25 €",
-  "paiement": ["Espèces", "Lydia", "PayLib", "Wero"],
+  "paiement": ["Carte", "Lydia", "PayLib", "Wero"],
   "horaires": {
     "semaine": { "jours": "Lundi – Vendredi", "heures": "11h00 – 21h30" },
-    "weekend": { "jours": "Samedi – Dimanche", "heures": "11h00 – 22h30" }
+    "weekend": { "jours": "Samedi",           "heures": "11h00 – 22h30" },
+    "ferme":   { "jours": "Dimanche",         "heures": "Fermé" }
   },
   "tunnel": [
-    { "step": 1, "title": "Choisir",   "description": "Parcourez la carte et ajoutez au panier" },
-    { "step": 2, "title": "Commander", "description": "Vos coordonnées + envoi via WhatsApp" },
-    { "step": 3, "title": "Confirmer", "description": "Nous validons la commande et le délai" },
-    { "step": 4, "title": "Payer",     "description": "Wero, Lydia, PayLib, carte ou espèces" },
-    { "step": 5, "title": "Recevoir",  "description": "Livraison chaude à votre adresse" }
+    { "step": 1, "title": "Choisir",    "description": "Parcourez la carte et ajoutez au panier" },
+    { "step": 2, "title": "Payer",      "description": "Wero, Lydia, PayLib ou carte à la livraison" },
+    { "step": 3, "title": "Notifier",   "description": "WhatsApp informe le restaurant du paiement" },
+    { "step": 4, "title": "Préparation","description": "Nous préparons votre commande" },
+    { "step": 5, "title": "Livraison",  "description": "Réception chaude à votre adresse" }
   ]
 }
