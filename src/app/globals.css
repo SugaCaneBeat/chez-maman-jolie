@@ -30,6 +30,24 @@ h1, h2, h3, h4 {
   font-family: var(--font-heading), Georgia, serif;
 }
 
+/* ─── Inputs / textarea / select : couleur par défaut sombre ───
+ * Tailwind preflight applique color: inherit aux champs, ce qui leur
+ * fait hériter le blanc du body (thème dark public). En admin, le fond
+ * est clair (bg-white / bg-gray-50) ⇒ texte invisible.
+ * On reset en couche base ⇒ les utilitaires text-white des composants
+ * dark (CartDrawer, AdminLogin) restent prioritaires. */
+@layer base {
+  input,
+  textarea,
+  select {
+    color: #111827;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: #9CA3AF;
+  }
+}
+
 /* ===== Animations ===== */
 
 @keyframes fade-in-up {
