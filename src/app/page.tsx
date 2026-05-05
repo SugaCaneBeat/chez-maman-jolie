@@ -4,6 +4,7 @@ import Toast from "@/components/Toast";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import MenuTabs from "@/components/MenuTabs";
+import FormulesSection from "@/components/FormulesSection";
 import Livraison from "@/components/Livraison";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
@@ -28,11 +29,39 @@ export default async function Home() {
   const withImages = allItems.filter((i) => i.id && i.image);
   const featured = withImages.slice(0, 3);
 
+  /* ── Section dédiée aux formules (en dehors de la carte) ── */
+  const formulesCat = categories.find((c) => c.type === "formules");
+  const formulesData = formulesCat?.formulesData;
+
   return (
     <CartProvider>
       <Header />
       <main className="bg-dark">
         <Hero featured={featured} />
+
+        {/* Section dédiée aux Formules — séparée de la carte */}
+        {formulesData && formulesData.formules.length > 0 && (
+          <section id="formules" className="py-20 sm:py-32 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-primary/8 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary/4 rounded-full blur-3xl" />
+            <div className="max-w-5xl mx-auto px-5 sm:px-8 relative z-10">
+              <ScrollAnimation>
+                <div className="text-center mb-14">
+                  <span className="inline-block text-primary text-xs font-bold uppercase tracking-[0.3em] mb-4">
+                    Offre du midi
+                  </span>
+                  <h2 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-4">
+                    {formulesCat?.name ?? "Nos Formules"}
+                  </h2>
+                  <p className="text-white/40 max-w-lg mx-auto">
+                    Des combinaisons compl&egrave;tes &agrave; petits prix &mdash; entr&eacute;e, plat, accompagnement, dessert et boisson.
+                  </p>
+                </div>
+              </ScrollAnimation>
+              <FormulesSection data={formulesData} />
+            </div>
+          </section>
+        )}
 
         {/* Menu */}
         <section id="menu" className="py-20 sm:py-32 relative overflow-hidden">

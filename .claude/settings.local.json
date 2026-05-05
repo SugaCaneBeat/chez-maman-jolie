@@ -52,7 +52,10 @@
       "Bash(node -e ' *)",
       "Bash(node --env-file=.env.local scripts/migrate.mjs)",
       "Bash(sort -t'-' -k5 -rn)",
-      "Bash(sort -t'/' -k1)"
+      "Bash(sort -t'/' -k1)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }

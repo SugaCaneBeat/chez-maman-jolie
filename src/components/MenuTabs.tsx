@@ -53,19 +53,18 @@ const ICONS: Record<string, ReactNode> = {
   ),
 };
 
-/* ─── Sections restaurant ─── */
+/* ─── Sections restaurant — les formules sont une section séparée hors de "Notre Carte" ─── */
 const SECTIONS = [
   { id: "tous",     label: "Tous",     slugs: [] },
   { id: "entrees",  label: "Entrées",  slugs: ["entrees"] },
-  { id: "plats",    label: "Plats",    slugs: ["formules","specialites","viandes","poissons","mijotes","legumes","accompagnements"] },
+  { id: "plats",    label: "Plats",    slugs: ["specialites","viandes","poissons","mijotes","legumes","accompagnements"] },
   { id: "desserts", label: "Desserts", slugs: ["desserts"] },
   { id: "boissons", label: "Boissons", slugs: ["boissons"] },
 ] as const;
 
-/* Ordre d'affichage de toutes les catégories en mode "Tous" */
+/* Ordre d'affichage de toutes les catégories en mode "Tous" (sans formules) */
 const ALL_ORDER = [
   "entrees",
-  "formules",
   "specialites",
   "viandes",
   "poissons",
