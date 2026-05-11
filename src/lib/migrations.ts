@@ -40,6 +40,15 @@ const MIGRATIONS: Array<{ label: string; sql: string }> = [
     label: "orders.sumup_reference",
     sql: "ALTER TABLE orders ADD COLUMN IF NOT EXISTS sumup_reference TEXT;",
   },
+  {
+    /* Le check constraint d'origine n'inclut pas 'paid', ce qui empêche
+       le webhook SumUp et verifyAndSyncSumUpPayment de mettre à jour le
+       statut après un paiement carte réussi. */
+    label: "orders.status_check (allow paid)",
+    sql: `ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
+          ALTER TABLE orders ADD CONSTRAINT orders_status_check
+            CHECK (status IN ('pending','paid','confirmed','preparing','ready','delivering','delivered','cancelled'));`,
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────

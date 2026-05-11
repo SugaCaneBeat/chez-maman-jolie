@@ -69,7 +69,10 @@
       "Bash(rm /tmp/vercel-prod.env)",
       "Bash(sed -E 's/\\(SUMUP_API_KEY=\\)\\(\"?\\)\\([^_]+_[^_]+_[^_]{0,3}\\).*/\\\\1\\\\2\\\\3…/')",
       "Bash(rm /tmp/check.env)",
-      "Bash(npx next *)"
+      "Bash(npx next *)",
+      "Bash(curl -fsS \"https://chezmamanjolie.com/checkout/test-id-not-exist\")",
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(curl -s \"https://chezmamanjolie.com/checkout/cc670258-df35-4d7e-bd40-f81787df3664\")"
     ]
   }
 }
