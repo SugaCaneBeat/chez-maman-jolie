@@ -68,7 +68,8 @@
       "Bash(sed -E 's/\\(SUMUP_API_KEY=\\)\\([^_]+_[^_]+_[^_]{0,3}\\).*/\\\\1\\\\2…/')",
       "Bash(rm /tmp/vercel-prod.env)",
       "Bash(sed -E 's/\\(SUMUP_API_KEY=\\)\\(\"?\\)\\([^_]+_[^_]+_[^_]{0,3}\\).*/\\\\1\\\\2\\\\3…/')",
-      "Bash(rm /tmp/check.env)"
+      "Bash(rm /tmp/check.env)",
+      "Bash(npx next *)"
     ]
   }
 }

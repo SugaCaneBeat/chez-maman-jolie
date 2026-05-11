@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getPublicOrder, buildOrderWhatsAppNotification } from "@/lib/actions/orders";
+import { getPublicOrder } from "@/lib/actions/orders";
+import { buildOrderWhatsAppNotification } from "@/lib/order-notifications";
 import { verifyAndSyncSumUpPayment } from "@/lib/actions/sumup-checkout";
 import OrderStatusView from "./OrderStatusView";
 
