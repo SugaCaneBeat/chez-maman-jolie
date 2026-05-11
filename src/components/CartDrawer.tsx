@@ -35,9 +35,16 @@ export default function CartDrawer() {
   const { items, isDrawerOpen, setDrawerOpen, updateQuantity, removeItem, clearCart, getTotal, getCount } = useCart();
 
   const [payMethod, setPayMethod] = useState<PayMethod | null>(null);
-  const [address, setAddress]     = useState("");
-  const [nom, setNom]             = useState("");
-  const [tel, setTel]             = useState("");
+
+  /* ── Customer info: split fields ── */
+  const [prenom, setPrenom]         = useState("");
+  const [nom, setNom]               = useState("");
+  const [tel, setTel]               = useState("");
+  const [numRue, setNumRue]         = useState("");
+  const [codePostal, setCodePostal] = useState("");
+  const [ville, setVille]           = useState("");
+  const [complement, setComplement] = useState("");
+
   const [copied, setCopied]       = useState<string | null>(null);
   const [saving, setSaving]       = useState(false);
   const [showErrors, setShowErrors] = useState(false);
@@ -52,31 +59,47 @@ export default function CartDrawer() {
   const [orderRef, setOrderRef] = useState<{ id: string; number: number } | null>(null);
 
   /* ── Refs for scroll-to-missing-field ── */
-  const nomRef     = useRef<HTMLInputElement>(null);
-  const telRef     = useRef<HTMLInputElement>(null);
-  const addressRef = useRef<HTMLTextAreaElement>(null);
-  const payRef     = useRef<HTMLDivElement>(null);
+  const prenomRef = useRef<HTMLInputElement>(null);
+  const nomRef    = useRef<HTMLInputElement>(null);
+  const telRef    = useRef<HTMLInputElement>(null);
+  const rueRef    = useRef<HTMLInputElement>(null);
+  const cpRef     = useRef<HTMLInputElement>(null);
+  const villeRef  = useRef<HTMLInputElement>(null);
+  const payRef    = useRef<HTMLDivElement>(null);
+
+  /* ── Adresse complète reconstruite à partir des champs ── */
+  const fullAddress =
+    numRue.trim() && codePostal.trim()
+      ? `${numRue.trim()}, ${codePostal.trim()} ${ville.trim()}`.trim()
+      : "";
 
   /* ── Validation ── */
-  const subtotal      = getTotal();
-  const deliveryFee   = zoneInfo && !zoneInfo.outOfRange ? zoneInfo.fee : 0;
-  const grandTotal    = subtotal + deliveryFee;
-  const minOrderValid = subtotal >= MIN_ORDER;
-  const nomValid      = nom.trim().length >= 2;
-  const telDigits     = tel.replace(/\D/g, "");
-  const telValid      = telDigits.length >= 10;
-  const addressValid  = address.trim().length >= 10;
-  const paymentValid  = payMethod !== null;
-  const zoneValid     = zoneInfo !== null && !zoneInfo.outOfRange;
-  const formValid     = minOrderValid && nomValid && telValid && addressValid && zoneValid && paymentValid;
+  const subtotal       = getTotal();
+  const deliveryFee    = zoneInfo && !zoneInfo.outOfRange ? zoneInfo.fee : 0;
+  const grandTotal     = subtotal + deliveryFee;
+  const minOrderValid  = subtotal >= MIN_ORDER;
+  const prenomValid    = prenom.trim().length >= 2;
+  const nomValid       = nom.trim().length >= 2;
+  const telDigits      = tel.replace(/\D/g, "");
+  const telValid       = telDigits.length >= 10;
+  const numRueValid    = numRue.trim().length >= 4;
+  const codePostalValid = /^\d{5}$/.test(codePostal.trim());
+  const villeValid     = ville.trim().length >= 2;
+  const addressValid   = numRueValid && codePostalValid && villeValid;
+  const paymentValid   = payMethod !== null;
+  const zoneValid      = zoneInfo !== null && !zoneInfo.outOfRange;
+  const formValid      = minOrderValid && prenomValid && nomValid && telValid && addressValid && zoneValid && paymentValid;
 
   const missing: string[] = [];
-  if (!minOrderValid) missing.push(`atteindre ${MIN_ORDER} € minimum`);
-  if (!nomValid)      missing.push("votre nom");
-  if (!telValid)      missing.push("votre téléphone");
-  if (!addressValid)  missing.push("votre adresse");
+  if (!minOrderValid)    missing.push(`atteindre ${MIN_ORDER} € minimum`);
+  if (!prenomValid)      missing.push("votre prénom");
+  if (!nomValid)         missing.push("votre nom");
+  if (!telValid)         missing.push("votre téléphone");
+  if (!numRueValid)      missing.push("votre numéro et rue");
+  if (!codePostalValid)  missing.push("un code postal valide");
+  if (!villeValid)       missing.push("votre ville");
   if (!zoneValid && addressValid) missing.push("une adresse dans notre zone");
-  if (!paymentValid)  missing.push("le mode de paiement");
+  if (!paymentValid)     missing.push("le mode de paiement");
 
   /* ── Géocoder l'adresse (debounced) dès qu'elle change ── */
   useEffect(() => {
@@ -87,7 +110,7 @@ export default function CartDrawer() {
     }
     setGeocoding(true);
     const handle = setTimeout(async () => {
-      const res = await resolveZone(address);
+      const res = await resolveZone(fullAddress);
       if (res) {
         setGeocoded(res.geo);
         setZoneInfo(res.zoneInfo);
@@ -98,7 +121,7 @@ export default function CartDrawer() {
       setGeocoding(false);
     }, 700);
     return () => { clearTimeout(handle); setGeocoding(false); };
-  }, [address, addressValid]);
+  }, [fullAddress, addressValid]);
 
   const formatPrice = (p: number) =>
     p % 1 === 0 ? `${p} €` : `${p.toFixed(2).replace(".", ",")} €`;
@@ -161,11 +184,15 @@ export default function CartDrawer() {
 
     /* Client */
     lines.push("👤 *CLIENT*");
-    lines.push(nom);
+    lines.push(`${prenom} ${nom}`.trim());
     lines.push(`📞 ${tel}`);
     lines.push("");
     lines.push("📍 *ADRESSE DE LIVRAISON*");
-    address.split("\n").forEach(l => lines.push(l));
+    lines.push(numRue);
+    lines.push(`${codePostal} ${ville}`.trim());
+    if (complement.trim()) {
+      lines.push(`_${complement.trim()}_`);
+    }
     if (zoneInfo && geocoded) {
       lines.push(`_Zone ${zoneInfo.zone} · ${zoneInfo.distanceKm.toFixed(1)} km de ${DEPART_LABEL}_`);
     }
@@ -201,18 +228,17 @@ export default function CartDrawer() {
     /* Validate required fields */
     if (!formValid) {
       setShowErrors(true);
-      if (!nomValid) {
-        nomRef.current?.focus();
-        nomRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      } else if (!telValid) {
-        telRef.current?.focus();
-        telRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      } else if (!addressValid) {
-        addressRef.current?.focus();
-        addressRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      } else if (!paymentValid) {
-        payRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
+      const scroll = (el: HTMLElement | null) => {
+        el?.focus();
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      };
+      if (!prenomValid)         scroll(prenomRef.current);
+      else if (!nomValid)       scroll(nomRef.current);
+      else if (!telValid)       scroll(telRef.current);
+      else if (!numRueValid)    scroll(rueRef.current);
+      else if (!codePostalValid) scroll(cpRef.current);
+      else if (!villeValid)     scroll(villeRef.current);
+      else if (!paymentValid)   payRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
@@ -240,9 +266,11 @@ export default function CartDrawer() {
       /* 1) Créer la commande en "pending" */
       const orderRes = await createOrder({
         items: items.map(i => ({ name: i.name, price: i.price, quantity: i.quantity, image: i.image })),
-        customerName: nom,
+        customerName: `${prenom} ${nom}`.trim(),
         customerPhone: tel,
-        customerAddress: address,
+        customerAddress: complement.trim()
+          ? `${numRue}\n${codePostal} ${ville}\n${complement.trim()}`
+          : `${numRue}\n${codePostal} ${ville}`,
         paymentMethod: "carte",
         paid: false,
         total: grandTotal,
@@ -285,9 +313,11 @@ export default function CartDrawer() {
     try {
       const res = await createOrder({
         items: items.map(i => ({ name: i.name, price: i.price, quantity: i.quantity, image: i.image })),
-        customerName: nom,
+        customerName: `${prenom} ${nom}`.trim(),
         customerPhone: tel,
-        customerAddress: address,
+        customerAddress: complement.trim()
+          ? `${numRue}\n${codePostal} ${ville}\n${complement.trim()}`
+          : `${numRue}\n${codePostal} ${ville}`,
         paymentMethod: payMethod,
         paid,
         total: grandTotal,
@@ -464,26 +494,48 @@ export default function CartDrawer() {
                 <h4 className="text-[10px] text-white/40 uppercase tracking-widest font-bold">
                   Vos informations
                 </h4>
-                <div>
-                  <label className="flex items-center gap-1 text-[10px] text-white/30 uppercase tracking-wider mb-1">
-                    Nom complet <span className="text-primary">*</span>
-                  </label>
-                  <input
-                    ref={nomRef}
-                    type="text"
-                    value={nom}
-                    onChange={(e) => setNom(e.target.value)}
-                    placeholder="Prénom Nom"
-                    className={`w-full bg-white/5 rounded-[5px] px-3 py-2 text-white text-sm focus:outline-none border placeholder:text-white/20 transition-colors ${
-                      showErrors && !nomValid
-                        ? "border-red-500/60 bg-red-500/5 focus:border-red-400"
-                        : "border-white/5 focus:border-primary/50"
-                    }`}
-                  />
-                  {showErrors && !nomValid && (
-                    <p className="text-[10px] text-red-400 mt-1">Indiquez au moins 2 caractères</p>
-                  )}
+
+                {/* Prénom + Nom sur la même ligne */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="flex items-center gap-1 text-[10px] text-white/30 uppercase tracking-wider mb-1">
+                      Prénom <span className="text-primary">*</span>
+                    </label>
+                    <input
+                      ref={prenomRef}
+                      type="text"
+                      autoComplete="given-name"
+                      value={prenom}
+                      onChange={(e) => setPrenom(e.target.value)}
+                      placeholder="Jean"
+                      className={`w-full bg-white/5 rounded-[5px] px-3 py-2 text-white text-sm focus:outline-none border placeholder:text-white/20 transition-colors ${
+                        showErrors && !prenomValid
+                          ? "border-red-500/60 bg-red-500/5 focus:border-red-400"
+                          : "border-white/5 focus:border-primary/50"
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-1 text-[10px] text-white/30 uppercase tracking-wider mb-1">
+                      Nom <span className="text-primary">*</span>
+                    </label>
+                    <input
+                      ref={nomRef}
+                      type="text"
+                      autoComplete="family-name"
+                      value={nom}
+                      onChange={(e) => setNom(e.target.value)}
+                      placeholder="Dupont"
+                      className={`w-full bg-white/5 rounded-[5px] px-3 py-2 text-white text-sm focus:outline-none border placeholder:text-white/20 transition-colors ${
+                        showErrors && !nomValid
+                          ? "border-red-500/60 bg-red-500/5 focus:border-red-400"
+                          : "border-white/5 focus:border-primary/50"
+                      }`}
+                    />
+                  </div>
                 </div>
+
+                {/* Téléphone */}
                 <div>
                   <label className="flex items-center gap-1 text-[10px] text-white/30 uppercase tracking-wider mb-1">
                     Téléphone <span className="text-primary">*</span>
@@ -506,76 +558,138 @@ export default function CartDrawer() {
                     <p className="text-[10px] text-red-400 mt-1">Numéro valide requis (au moins 10 chiffres)</p>
                   )}
                 </div>
+
+                {/* Numéro et rue */}
                 <div>
                   <label className="flex items-center gap-1 text-[10px] text-white/30 uppercase tracking-wider mb-1">
-                    Adresse de livraison <span className="text-primary">*</span>
+                    Numéro et rue <span className="text-primary">*</span>
                   </label>
-                  <textarea
-                    ref={addressRef}
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="15 rue du Temple, 75011 Paris&#10;Code d'accès, étage…"
-                    rows={2}
-                    className={`w-full bg-white/5 rounded-[5px] px-3 py-2 text-white text-sm focus:outline-none border placeholder:text-white/20 resize-none transition-colors ${
-                      showErrors && !addressValid
+                  <input
+                    ref={rueRef}
+                    type="text"
+                    autoComplete="street-address"
+                    value={numRue}
+                    onChange={(e) => setNumRue(e.target.value)}
+                    placeholder="15 rue du Temple"
+                    className={`w-full bg-white/5 rounded-[5px] px-3 py-2 text-white text-sm focus:outline-none border placeholder:text-white/20 transition-colors ${
+                      showErrors && !numRueValid
                         ? "border-red-500/60 bg-red-500/5 focus:border-red-400"
                         : "border-white/5 focus:border-primary/50"
                     }`}
                   />
-                  {showErrors && !addressValid && (
-                    <p className="text-[10px] text-red-400 mt-1">Adresse complète requise (rue, ville, code postal)</p>
-                  )}
-
-                  {/* Indicateur de zone après géocodage */}
-                  {addressValid && (
-                    <div className="mt-2">
-                      {geocoding && (
-                        <p className="text-[10px] text-white/40 flex items-center gap-1.5">
-                          <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" className="opacity-25"/>
-                            <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="2" fill="none"/>
-                          </svg>
-                          Vérification de votre zone…
-                        </p>
-                      )}
-                      {!geocoding && zoneInfo && !zoneInfo.outOfRange && (
-                        <div className={`text-[10px] rounded-[5px] px-2 py-1.5 flex items-center gap-1.5 ${
-                          zoneInfo.zone === 1 ? "bg-emerald-500/10 text-emerald-300" :
-                          zoneInfo.zone === 2 ? "bg-sky-500/10 text-sky-300" :
-                                                 "bg-amber-500/10 text-amber-300"
-                        }`}>
-                          <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
-                          </svg>
-                          <span className="flex-1">
-                            Zone {zoneInfo.zone} · {zoneInfo.distanceKm.toFixed(1)} km de {DEPART} ·
-                            {" "}<span className="font-semibold">Livraison {zoneInfo.feeLabel.toLowerCase() === "gratuit" ? "gratuite" : zoneInfo.feeLabel}</span>
-                          </span>
-                        </div>
-                      )}
-                      {!geocoding && zoneInfo && zoneInfo.outOfRange && (
-                        <div className="text-[10px] rounded-[5px] px-2 py-1.5 bg-red-500/10 text-red-300 flex items-center gap-1.5">
-                          <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                          </svg>
-                          Hors zone de livraison ({zoneInfo.distanceKm.toFixed(1)} km — maximum 10 km)
-                        </div>
-                      )}
-                      {!geocoding && !zoneInfo && (
-                        <p className="text-[10px] text-white/40 mt-1">
-                          Adresse introuvable — vérifiez l&apos;orthographe ou ajoutez le code postal.
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  <p className="text-[10px] text-white/30 mt-1 flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    Livraison depuis {DEPART} &middot; distance calculée automatiquement
-                  </p>
                 </div>
+
+                {/* Code postal + Ville sur la même ligne */}
+                <div className="grid grid-cols-[1fr_2fr] gap-2">
+                  <div>
+                    <label className="flex items-center gap-1 text-[10px] text-white/30 uppercase tracking-wider mb-1">
+                      Code postal <span className="text-primary">*</span>
+                    </label>
+                    <input
+                      ref={cpRef}
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="postal-code"
+                      maxLength={5}
+                      value={codePostal}
+                      onChange={(e) => setCodePostal(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                      placeholder="75011"
+                      className={`w-full bg-white/5 rounded-[5px] px-3 py-2 text-white text-sm focus:outline-none border placeholder:text-white/20 transition-colors ${
+                        showErrors && !codePostalValid
+                          ? "border-red-500/60 bg-red-500/5 focus:border-red-400"
+                          : "border-white/5 focus:border-primary/50"
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-1 text-[10px] text-white/30 uppercase tracking-wider mb-1">
+                      Ville <span className="text-primary">*</span>
+                    </label>
+                    <input
+                      ref={villeRef}
+                      type="text"
+                      autoComplete="address-level2"
+                      value={ville}
+                      onChange={(e) => setVille(e.target.value)}
+                      placeholder="Paris"
+                      className={`w-full bg-white/5 rounded-[5px] px-3 py-2 text-white text-sm focus:outline-none border placeholder:text-white/20 transition-colors ${
+                        showErrors && !villeValid
+                          ? "border-red-500/60 bg-red-500/5 focus:border-red-400"
+                          : "border-white/5 focus:border-primary/50"
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {/* Complément optionnel */}
+                <div>
+                  <label className="flex items-center gap-1 text-[10px] text-white/30 uppercase tracking-wider mb-1">
+                    Complément <span className="text-white/30 normal-case font-normal">(optionnel)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={complement}
+                    onChange={(e) => setComplement(e.target.value)}
+                    placeholder="Code d'accès, étage, escalier…"
+                    className="w-full bg-white/5 rounded-[5px] px-3 py-2 text-white text-sm focus:outline-none border border-white/5 focus:border-primary/50 placeholder:text-white/20 transition-colors"
+                  />
+                </div>
+
+                {showErrors && !addressValid && (
+                  <p className="text-[10px] text-red-400">
+                    Adresse complète requise (numéro + rue, code postal 5 chiffres, ville)
+                  </p>
+                )}
+
+                {/* Indicateur de zone après géocodage */}
+                {addressValid && (
+                  <div className="mt-1">
+                    {geocoding && (
+                      <p className="text-[10px] text-white/40 flex items-center gap-1.5">
+                        <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" className="opacity-25"/>
+                          <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="2" fill="none"/>
+                        </svg>
+                        Vérification de votre zone…
+                      </p>
+                    )}
+                    {!geocoding && zoneInfo && !zoneInfo.outOfRange && (
+                      <div className={`text-[10px] rounded-[5px] px-2 py-1.5 flex items-center gap-1.5 ${
+                        zoneInfo.zone === 1 ? "bg-emerald-500/10 text-emerald-300" :
+                        zoneInfo.zone === 2 ? "bg-sky-500/10 text-sky-300" :
+                                                "bg-amber-500/10 text-amber-300"
+                      }`}>
+                        <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span className="flex-1">
+                          Zone {zoneInfo.zone} · {zoneInfo.distanceKm.toFixed(1)} km de {DEPART} ·
+                          {" "}<span className="font-semibold">Livraison {zoneInfo.feeLabel.toLowerCase() === "gratuit" ? "gratuite" : zoneInfo.feeLabel}</span>
+                        </span>
+                      </div>
+                    )}
+                    {!geocoding && zoneInfo && zoneInfo.outOfRange && (
+                      <div className="text-[10px] rounded-[5px] px-2 py-1.5 bg-red-500/10 text-red-300 flex items-center gap-1.5">
+                        <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        Hors zone de livraison ({zoneInfo.distanceKm.toFixed(1)} km — maximum 10 km)
+                      </div>
+                    )}
+                    {!geocoding && !zoneInfo && (
+                      <p className="text-[10px] text-white/40 mt-1">
+                        Adresse introuvable — vérifiez l&apos;orthographe ou le code postal.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <p className="text-[10px] text-white/30 mt-1 flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  Livraison depuis {DEPART} &middot; distance calculée automatiquement
+                </p>
               </div>
 
               {/* ── Payment method ── */}

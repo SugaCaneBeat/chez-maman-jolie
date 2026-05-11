@@ -58,7 +58,17 @@
       "Bash(git push *)",
       "WebFetch(domain:developer.sumup.com)",
       "WebFetch(domain:chezmamanjolie.com)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(vercel --version)",
+      "Bash(vercel whoami *)",
+      "Bash(vercel --prod --yes)",
+      "Bash(curl -fsS \"https://chezmamanjolie.com/api/sumup/status?token=jolie-check-2026&v=$\\(date +%s\\)\" -o /tmp/sumup-check.json)",
+      "Read(//tmp/**)",
+      "Bash(vercel env *)",
+      "Bash(sed -E 's/\\(SUMUP_API_KEY=\\)\\([^_]+_[^_]+_[^_]{0,3}\\).*/\\\\1\\\\2…/')",
+      "Bash(rm /tmp/vercel-prod.env)",
+      "Bash(sed -E 's/\\(SUMUP_API_KEY=\\)\\(\"?\\)\\([^_]+_[^_]+_[^_]{0,3}\\).*/\\\\1\\\\2\\\\3…/')",
+      "Bash(rm /tmp/check.env)"
     ]
   }
 }
