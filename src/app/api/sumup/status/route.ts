@@ -68,25 +68,65 @@ export async function GET(req: Request) {
     liveCheck = { ok: false, error: "SUMUP_API_KEY non défini" };
   }
 
-  /* Diagnostic global */
-  const ready =
-    env.isSumUpConfigured &&
-    liveCheck.ok &&
-    liveCheck.merchant === merchantCode;
+  /* Test fonctionnel : créer un checkout réel (le plus fiable).
+   * En sandbox SumUp, l'API key peut être associée au compte principal
+   * mais autorisée à créer des checkouts pour un merchant sandbox distinct.
+   * Donc ne pas se baser uniquement sur l'égalité /me.merchant === merchant_code. */
+  let checkoutCheck: { ok: boolean; error?: string; mode?: string } = { ok: false };
+  if (apiKey && merchantCode) {
+    try {
+      const r = await fetch("https://api.sumup.com/v0.1/checkouts", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          checkout_reference: `healthcheck-${Date.now()}`,
+          amount: 1.00,
+          currency: "EUR",
+          merchant_code: merchantCode,
+          description: "Healthcheck Chez Maman Jolie",
+          return_url: `${siteUrl ?? "https://chezmamanjolie.com"}/admin`,
+        }),
+        cache: "no-store",
+      });
+      if (r.ok) {
+        const data = await r.json() as { id?: string; status?: string };
+        checkoutCheck = {
+          ok: true,
+          mode: liveCheck.merchant === merchantCode ? "production" : "sandbox",
+        };
+        /* On laisse le checkout expirer naturellement — pas de DELETE endpoint
+           sur les checkouts SumUp. id présent pour info: */
+        void data.id;
+      } else {
+        const text = await r.text();
+        checkoutCheck = { ok: false, error: text.slice(0, 200) };
+      }
+    } catch (e) {
+      checkoutCheck = { ok: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
+  /* Diagnostic global — le ready se base sur la création de checkout */
+  const ready = env.isSumUpConfigured && liveCheck.ok && checkoutCheck.ok;
 
   return NextResponse.json({
     ready,
+    mode: checkoutCheck.mode,
     env,
     liveCheck,
+    checkoutCheck,
     notes:
       ready
-        ? "✅ SumUp prêt pour la production"
+        ? `✅ SumUp prêt — mode ${checkoutCheck.mode}`
         : !env.isSumUpConfigured
-          ? "❌ Variables d'environnement manquantes — ajoute-les sur Vercel puis redeploy"
+          ? "❌ Variables d'environnement manquantes"
           : !liveCheck.ok
-            ? "❌ La clé API n'est pas valide (vérifier /v0.1/me ci-dessus)"
-            : liveCheck.merchant !== merchantCode
-              ? `⚠️ Le SUMUP_MERCHANT_CODE (${merchantCode}) ne correspond pas au compte associé à la clé (${liveCheck.merchant})`
+            ? "❌ La clé API n'est pas valide"
+            : !checkoutCheck.ok
+              ? `❌ Création de checkout impossible : ${checkoutCheck.error ?? "erreur inconnue"}`
               : "?",
   });
 }

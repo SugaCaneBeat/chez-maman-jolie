@@ -72,7 +72,11 @@
       "Bash(npx next *)",
       "Bash(curl -fsS \"https://chezmamanjolie.com/checkout/test-id-not-exist\")",
       "Bash(node --input-type=module -e ' *)",
-      "Bash(curl -s \"https://chezmamanjolie.com/checkout/cc670258-df35-4d7e-bd40-f81787df3664\")"
+      "Bash(curl -s \"https://chezmamanjolie.com/checkout/cc670258-df35-4d7e-bd40-f81787df3664\")",
+      "Bash(curl -s \"https://chezmamanjolie.com/?nocache=$\\(date +%s\\)\")",
+      "Bash(curl -s \"https://chezmamanjolie.com/?bust=$\\(date +%s\\)\" -H \"Cache-Control: no-cache\")",
+      "Bash(curl -s \"https://chezmamanjolie.com/?v=$\\(date +%s%N\\)\" -H \"Cache-Control: no-cache, no-store\")",
+      "Bash(curl -s \"https://chezmamanjolie.com/?v=$\\(date +%s%N\\)\" -H \"Cache-Control: no-cache\")"
     ]
   }
 }
