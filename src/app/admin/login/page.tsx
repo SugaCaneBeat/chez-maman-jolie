@@ -6,8 +6,8 @@ import { createBrowserClient } from "@/lib/supabase/client";
 /* Pseudos courts → emails de Supabase. Permet de se connecter avec
  * "caissier" ou "tech" au lieu de l'email complet. */
 const SHORT_LOGINS: Record<string, string> = {
-  caissier: "caissier@maman-jolie.fr",
-  tech:     "tech@maman-jolie.fr",
+  caissier: "caissier@chezmamanjolie.com",
+  tech:     "tech@chezmamanjolie.com",
 };
 
 export default function AdminLogin() {
@@ -25,7 +25,7 @@ export default function AdminLogin() {
     /* Pseudo court connu */
     if (SHORT_LOGINS[v]) return SHORT_LOGINS[v];
     /* Sinon, fallback: on tente d'ajouter le domaine par défaut */
-    return `${v}@maman-jolie.fr`;
+    return `${v}@chezmamanjolie.com`;
   };
 
   const handleLogin = async (e: React.FormEvent) => {
