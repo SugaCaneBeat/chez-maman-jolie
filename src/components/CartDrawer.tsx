@@ -7,34 +7,21 @@ import { createSumUpCheckoutForOrder } from "@/lib/actions/sumup-checkout";
 import { resolveZone, type ZoneInfo, type GeocodedAddress, DEPART_LABEL } from "@/lib/geo";
 import Image from "next/image";
 
-/* ─── Payment methods ─── */
-const PHONE  = "+33 7 53 87 32 13";
+/* ─── Constantes ─── */
 const DEPART = "Paris 11ème";
 
 /* Minimum de commande */
 const MIN_ORDER = 25;
 
-type PayMethod = "carte" | "lydia" | "paylib" | "wero";
-
-const PAY_OPTIONS: { id: PayMethod; label: string; sub: string; color: string; textColor: string }[] = [
-  { id: "carte",  label: "Carte",  sub: "En ligne · SumUp", color: "bg-indigo-500/15", textColor: "text-indigo-400" },
-  { id: "lydia",  label: "Lydia",  sub: "Mobile",            color: "bg-purple-500/15", textColor: "text-purple-400" },
-  { id: "paylib", label: "PayLib", sub: "Mobile",            color: "bg-sky-500/15",    textColor: "text-sky-400"    },
-  { id: "wero",   label: "Wero",   sub: "Mobile",            color: "bg-teal-500/15",   textColor: "text-teal-400"   },
-];
-
-/* ─── Deep-links / URLs des apps de paiement mobile ─── */
-const APP_URLS: Record<"lydia" | "paylib" | "wero", string> = {
-  lydia:  "https://lydia.me/",
-  paylib: "https://www.paylib.fr/",
-  wero:   "https://wero-wallet.eu/fr",
-};
+/* Un seul mode de paiement: carte bancaire via SumUp (online checkout) */
+type PayMethod = "carte";
 
 
 export default function CartDrawer() {
   const { items, isDrawerOpen, setDrawerOpen, updateQuantity, removeItem, clearCart, getTotal, getCount } = useCart();
 
-  const [payMethod, setPayMethod] = useState<PayMethod | null>(null);
+  /* Carte est le seul moyen de paiement — pré-sélectionné */
+  const payMethod: PayMethod = "carte";
 
   /* ── Customer info: split fields ── */
   const [prenom, setPrenom]         = useState("");
@@ -46,7 +33,6 @@ export default function CartDrawer() {
   const [complement, setComplement] = useState("");
   const [tip, setTip]               = useState(0);
 
-  const [copied, setCopied]       = useState<string | null>(null);
   const [saving, setSaving]       = useState(false);
   const [showErrors, setShowErrors] = useState(false);
 
@@ -56,8 +42,7 @@ export default function CartDrawer() {
   const [geocoding, setGeocoding] = useState(false);
 
   /* ── Flow step: "form" → "payment" → "sent" ── */
-  const [step, setStep] = useState<"form" | "payment" | "sent">("form");
-  const [orderRef, setOrderRef] = useState<{ id: string; number: number } | null>(null);
+  /* Plus de step "sent" : SumUp redirige directement vers /commande/[id] */
 
   /* ── Refs for scroll-to-missing-field ── */
   const prenomRef = useRef<HTMLInputElement>(null);
@@ -66,7 +51,6 @@ export default function CartDrawer() {
   const rueRef    = useRef<HTMLInputElement>(null);
   const cpRef     = useRef<HTMLInputElement>(null);
   const villeRef  = useRef<HTMLInputElement>(null);
-  const payRef    = useRef<HTMLDivElement>(null);
 
   /* ── Adresse complète reconstruite à partir des champs ── */
   const fullAddress =
@@ -87,9 +71,8 @@ export default function CartDrawer() {
   const codePostalValid = /^\d{5}$/.test(codePostal.trim());
   const villeValid     = ville.trim().length >= 2;
   const addressValid   = numRueValid && codePostalValid && villeValid;
-  const paymentValid   = payMethod !== null;
   const zoneValid      = zoneInfo !== null && !zoneInfo.outOfRange;
-  const formValid      = minOrderValid && prenomValid && nomValid && telValid && addressValid && zoneValid && paymentValid;
+  const formValid      = minOrderValid && prenomValid && nomValid && telValid && addressValid && zoneValid;
 
   const missing: string[] = [];
   if (!minOrderValid)    missing.push(`atteindre ${MIN_ORDER} € minimum`);
@@ -100,7 +83,6 @@ export default function CartDrawer() {
   if (!codePostalValid)  missing.push("un code postal valide");
   if (!villeValid)       missing.push("votre ville");
   if (!zoneValid && addressValid) missing.push("une adresse dans notre zone");
-  if (!paymentValid)     missing.push("le mode de paiement");
 
   /* ── Body scroll lock quand le drawer est ouvert (iOS Safari fix) ── */
   useEffect(() => {
@@ -165,111 +147,13 @@ export default function CartDrawer() {
   const formatPrice = (p: number) =>
     p % 1 === 0 ? `${p} €` : `${p.toFixed(2).replace(".", ",")} €`;
 
-  const handleCopy = (value: string, label: string) => {
-    navigator.clipboard.writeText(value);
-    setCopied(label);
-    setTimeout(() => setCopied(null), 2000);
-  };
-
   const handleClose = () => {
     setDrawerOpen(false);
     setTimeout(() => {
-      setPayMethod(null);
-      setStep("form");
       setShowErrors(false);
-      setOrderRef(null);
       setTip(0);
     }, 400);
   };
-
-  /** Formate un numéro de téléphone en groupes de 2 chiffres */
-  const fmtPhone = (raw: string) => {
-    const digits = raw.replace(/\D/g, "");
-    if (digits.length < 10) return raw;
-    const country = digits.length > 10 ? digits.slice(0, 2) : "";
-    const local = digits.slice(country ? 2 : 0);
-    const first = local[0];
-    const rest = local.slice(1).match(/.{1,2}/g)?.join(" ") ?? "";
-    return country ? `+${country} ${first} ${rest}`.trim() : `${first} ${rest}`.trim();
-  };
-
-  /* ── Build WhatsApp message — clean professional layout ── */
-  const buildWAMessage = (method: PayMethod, paid: boolean, ref: { id: string; number: number } | null) => {
-    const labels: Record<PayMethod, string> = {
-      carte:  "Carte bancaire (SumUp)",
-      lydia:  "Lydia",
-      paylib: "PayLib",
-      wero:   "Wero",
-    };
-    const grandT = formatPrice(grandTotal);
-    const lines: string[] = [];
-
-    /* En-tête épuré */
-    lines.push("*Chez Maman Jolie*");
-    lines.push("");
-    if (paid) {
-      lines.push(ref ? `✅ *Commande #${ref.number} — Payée*` : "✅ *Commande — Payée*");
-    } else {
-      lines.push(ref ? `📥 *Nouvelle commande #${ref.number}*` : "📥 *Nouvelle commande*");
-    }
-    lines.push("");
-
-    /* Client */
-    lines.push("*Client*");
-    lines.push(`${prenom} ${nom}`.trim());
-    lines.push(fmtPhone(tel));
-    lines.push("");
-
-    /* Livraison + lien Google Maps */
-    lines.push("*Livraison*");
-    lines.push(numRue);
-    lines.push(`${codePostal} ${ville}`.trim());
-    if (complement.trim()) lines.push(`_${complement.trim()}_`);
-    if (zoneInfo && geocoded) {
-      lines.push(`_Zone ${zoneInfo.zone} · ${zoneInfo.distanceKm.toFixed(1)} km_`);
-    }
-    const mapsQ = encodeURIComponent(`${numRue}, ${codePostal} ${ville}`.trim());
-    lines.push(`🗺️ Itinéraire : https://www.google.com/maps/search/?api=1&query=${mapsQ}`);
-    lines.push("");
-
-    /* Articles */
-    lines.push("*Détails*");
-    items.forEach(i => {
-      lines.push(`• ${i.quantity}× ${i.name} — ${formatPrice(i.price * i.quantity)}`);
-    });
-    if (deliveryFee > 0) {
-      lines.push(`• Livraison (Zone ${zoneInfo?.zone}) — ${formatPrice(deliveryFee)}`);
-    }
-    if (tip > 0) {
-      lines.push(`• Pourboire livreur — ${formatPrice(tip)}`);
-    }
-    lines.push("");
-
-    /* Total */
-    lines.push(`*Total : ${grandT}*`);
-    if (paid) {
-      lines.push(`_Payé par ${labels[method]}_`);
-    } else {
-      lines.push(`_Paiement en attente : ${labels[method]}_`);
-    }
-    lines.push("");
-
-    /* Closing + suivi */
-    if (paid) {
-      lines.push("Merci de préparer la commande dès réception 🙏");
-    } else {
-      lines.push("_Le client n'a pas encore confirmé le paiement._");
-    }
-    if (ref) {
-      lines.push("");
-      lines.push(`Suivi : https://chezmamanjolie.com/commande/${ref.id}`);
-    }
-
-    return encodeURIComponent(lines.join("\n"));
-  };
-
-  const isMobilePay = payMethod === "lydia" || payMethod === "paylib" || payMethod === "wero";
-  const isCardOnline = payMethod === "carte";
 
   const handleOrder = async () => {
     /* Validate required fields */
@@ -279,35 +163,21 @@ export default function CartDrawer() {
         el?.focus();
         el?.scrollIntoView({ behavior: "smooth", block: "center" });
       };
-      if (!prenomValid)         scroll(prenomRef.current);
-      else if (!nomValid)       scroll(nomRef.current);
-      else if (!telValid)       scroll(telRef.current);
-      else if (!numRueValid)    scroll(rueRef.current);
+      if (!prenomValid)          scroll(prenomRef.current);
+      else if (!nomValid)        scroll(nomRef.current);
+      else if (!telValid)        scroll(telRef.current);
+      else if (!numRueValid)     scroll(rueRef.current);
       else if (!codePostalValid) scroll(cpRef.current);
-      else if (!villeValid)     scroll(villeRef.current);
-      else if (!paymentValid)   payRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      else if (!villeValid)      scroll(villeRef.current);
       return;
     }
 
     /* Carte → SumUp online checkout */
-    if (isCardOnline) {
-      await doCardCheckout();
-      return;
-    }
-
-    /* Mobile payment (Lydia/PayLib/Wero): show payment interstitial first */
-    if (isMobilePay) {
-      setStep("payment");
-      return;
-    }
-
-    /* Fallback */
-    await doSendOrder(false);
+    await doCardCheckout();
   };
 
   /* ── Carte bancaire en ligne via SumUp ─── */
   const doCardCheckout = async () => {
-    if (!payMethod) return;
     setSaving(true);
     try {
       /* 1) Créer la commande en "pending" */
@@ -339,13 +209,13 @@ export default function CartDrawer() {
         setSaving(false);
         alert(
           checkoutRes.error ??
-            "Paiement par carte indisponible pour le moment. Choisissez un autre mode."
+            "Paiement par carte indisponible pour le moment — réessayez plus tard."
         );
         return;
       }
 
       /* 3) Vider le panier puis afficher notre page de paiement
-         (widget SumUp embarqué sur notre site, pas une page externe) */
+         (widget SumUp embarqué sur notre site) */
       clearCart();
       window.location.href = `/checkout/${orderRes.orderId}`;
     } catch (e) {
@@ -355,37 +225,6 @@ export default function CartDrawer() {
   };
 
   /* Appelé depuis "Envoyer" (carte) ou "J'ai payé" (Wero etc.) */
-  const doSendOrder = async (paid: boolean) => {
-    if (!payMethod) return;
-    setSaving(true);
-    let ref: { id: string; number: number } | null = null;
-    try {
-      const res = await createOrder({
-        items: items.map(i => ({ name: i.name, price: i.price, quantity: i.quantity, image: i.image })),
-        customerName: `${prenom} ${nom}`.trim(),
-        customerPhone: tel,
-        customerAddress: complement.trim()
-          ? `${numRue}\n${codePostal} ${ville}\n${complement.trim()}`
-          : `${numRue}\n${codePostal} ${ville}`,
-        paymentMethod: payMethod,
-        paid,
-        total: grandTotal,
-        tip,
-      });
-      if (res.success && res.orderId && res.orderNumber) {
-        ref = { id: res.orderId, number: res.orderNumber };
-        setOrderRef(ref);
-      }
-    } catch {}
-    setSaving(false);
-    window.open(`https://wa.me/33753873213?text=${buildWAMessage(payMethod, paid, ref)}`, "_blank");
-    /* clear cart once the order is placed */
-    clearCart();
-    setStep("sent");
-  };
-
-  const appName = payMethod === "lydia" ? "Lydia" : payMethod === "paylib" ? "PayLib" : payMethod === "wero" ? "Wero" : "";
-
   return (
     <>
       {/* Backdrop */}
@@ -776,45 +615,20 @@ export default function CartDrawer() {
                 </p>
               </div>
 
-              {/* ── Payment method ── */}
-              <div ref={payRef} className={`rounded-[5px] transition-all ${showErrors && !paymentValid ? "ring-1 ring-red-500/60 bg-red-500/5 p-3 -m-3" : ""}`}>
-                <p className="text-[10px] text-white/40 uppercase tracking-widest mb-2 font-bold flex items-center gap-1">
-                  Mode de paiement <span className="text-primary">*</span>
-                </p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {PAY_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.id}
-                      onClick={() => setPayMethod(opt.id)}
-                      className={`rounded-[5px] px-2 py-3 min-h-[60px] text-center transition-all border ${
-                        payMethod === opt.id
-                          ? `${opt.color} ${opt.textColor} border-current/40 scale-[1.02]`
-                          : "bg-white/5 text-white/50 border-white/5 hover:bg-white/8"
-                      }`}
-                    >
-                      <span className="block text-xs font-bold leading-tight">{opt.label}</span>
-                      <span className={`block text-[9px] mt-0.5 leading-tight ${payMethod === opt.id ? "opacity-80" : "opacity-40"}`}>
-                        {opt.sub}
-                      </span>
-                    </button>
-                  ))}
+              {/* ── Paiement carte bancaire (seul mode disponible) ── */}
+              <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-[5px] p-4 flex items-start gap-3">
+                <div className="w-10 h-10 rounded-[5px] bg-indigo-500/15 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                  </svg>
                 </div>
-                {showErrors && !paymentValid && (
-                  <p className="text-[10px] text-red-400 mt-2">Choisissez un mode de paiement</p>
-                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-bold text-sm">Paiement par carte bancaire</p>
+                  <p className="text-white/50 text-xs mt-0.5 leading-relaxed">
+                    Vous serez redirigé vers la page de paiement sécurisée SumUp (3D&nbsp;Secure). Retour automatique vers le suivi de commande après paiement.
+                  </p>
+                </div>
               </div>
-
-              {/* ── Note paiement sélectionné ── */}
-              {isMobilePay && (
-                <p className="text-[11px] text-white/50 -mt-2 px-1">
-                  → Après clic, vous pourrez ouvrir {appName} pour effectuer le paiement avant d&apos;envoyer la commande.
-                </p>
-              )}
-              {payMethod === "carte" && (
-                <p className="text-[11px] text-white/50 -mt-2 px-1">
-                  → Vous serez redirigé vers la page de paiement sécurisée SumUp. Retour automatique vers le suivi de commande après paiement.
-                </p>
-              )}
             </>
           )}
         </div>
@@ -853,98 +667,8 @@ export default function CartDrawer() {
               </div>
             </div>
 
-            {step === "payment" ? (
-              /* ── Étape paiement mobile (Lydia / PayLib / Wero) ── */
-              <div className="space-y-3">
-                <div className={`rounded-[5px] p-4 border ${
-                  payMethod === "wero"  ? "bg-teal-500/10 border-teal-500/30" :
-                  payMethod === "lydia" ? "bg-purple-500/10 border-purple-500/30" :
-                                           "bg-sky-500/10 border-sky-500/30"
-                }`}>
-                  <p className="text-white font-bold text-sm mb-1">Paiement {appName}</p>
-                  <p className="text-white/60 text-xs mb-3">
-                    Envoyez <span className="text-primary font-bold">{formatPrice(grandTotal)}</span> au numéro :
-                  </p>
-                  <div className="flex items-center justify-between bg-white/5 rounded-[5px] px-3 py-2 mb-3">
-                    <span className="text-white text-sm font-mono">{PHONE}</span>
-                    <button
-                      onClick={() => handleCopy(PHONE.replace(/\s/g, ""), "phone-pay")}
-                      className="text-white/40 hover:text-primary transition-colors"
-                    >
-                      {copied === "phone-pay"
-                        ? <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
-                        : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                      }
-                    </button>
-                  </div>
-                  <a
-                    href={APP_URLS[payMethod as "lydia" | "paylib" | "wero"]}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full text-center bg-white/10 hover:bg-white/15 text-white font-semibold py-3 rounded-[5px] text-sm transition-all"
-                  >
-                    Ouvrir {appName} →
-                  </a>
-                </div>
-                <button
-                  onClick={() => doSendOrder(true)}
-                  disabled={saving}
-                  className="flex items-center justify-center gap-2 w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold py-4 rounded-[5px] text-base min-h-[52px] transition-all hover:scale-[1.02] shadow-lg shadow-[#25D366]/20 disabled:opacity-40"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
-                  </svg>
-                  {saving ? "Envoi..." : `J'ai payé · Confirmer la commande`}
-                </button>
-                <button onClick={() => setStep("form")} className="w-full text-white/40 hover:text-white text-xs py-2 transition-colors">
-                  ← Revenir au panier
-                </button>
-              </div>
-            ) : step === "sent" ? (
-              /* ── Commande envoyée : confirmation client ── */
-              <div className="space-y-3">
-                <div className="bg-gradient-to-br from-emerald-500/10 to-primary/5 border border-emerald-500/30 rounded-[5px] p-4 text-center">
-                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
-                    </svg>
-                  </div>
-                  <p className="font-heading text-white font-bold text-lg mb-1">
-                    Commande prise en compte
-                  </p>
-                  {orderRef && (
-                    <p className="text-primary font-bold text-xl mb-2">
-                      #{orderRef.number}
-                    </p>
-                  )}
-                  <p className="text-white/60 text-xs leading-relaxed">
-                    Votre commande a bien été transmise au restaurant.
-                    {" Le paiement est confirmé, nous préparons vos plats."}
-                  </p>
-                </div>
-
-                {orderRef && (
-                  <a
-                    href={`/commande/${orderRef.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full bg-primary hover:bg-primary-light text-dark font-bold py-3 rounded-[5px] text-sm transition-all"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                    </svg>
-                    Suivre ma commande
-                  </a>
-                )}
-
-                <button onClick={handleClose} className="w-full text-white/50 hover:text-white text-xs py-2 transition-colors">
-                  Fermer
-                </button>
-              </div>
-            ) : (
-              <>
-                {/* Validation banner above the button */}
-                {showErrors && !formValid && (
+            {/* Validation banner above the button */}
+            {showErrors && !formValid && (
                   <div className="bg-red-500/10 border border-red-500/30 rounded-[5px] px-3 py-2 flex items-start gap-2">
                     <svg className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
@@ -960,13 +684,13 @@ export default function CartDrawer() {
                   disabled={saving}
                   className={`group flex items-center justify-center gap-3 w-full font-bold py-4 rounded-[5px] text-base min-h-[52px] transition-all shadow-lg disabled:opacity-40 disabled:scale-100 disabled:cursor-not-allowed ${
                     formValid
-                      ? "bg-[#25D366] hover:bg-[#20BD5A] text-white hover:scale-[1.02] shadow-[#25D366]/20"
+                      ? "bg-gradient-to-r from-primary to-primary-light hover:from-primary-light hover:to-primary text-dark hover:scale-[1.02] shadow-primary/30"
                       : "bg-white/10 hover:bg-white/15 text-white/80 shadow-black/10"
                   }`}
                 >
                   {formValid ? (
-                    <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                     </svg>
                   ) : (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -974,24 +698,18 @@ export default function CartDrawer() {
                     </svg>
                   )}
                   {saving
-                    ? (isCardOnline ? "Redirection…" : "Envoi…")
+                    ? "Redirection…"
                     : formValid
-                      ? (isCardOnline
-                          ? `Payer ${formatPrice(grandTotal)} par carte`
-                          : isMobilePay
-                            ? `Payer avec ${appName}`
-                            : "Envoyer sur WhatsApp")
+                      ? `Payer ${formatPrice(grandTotal)} par carte`
                       : !minOrderValid
                         ? `Minimum ${MIN_ORDER} € pour commander`
                         : !zoneValid && addressValid
                           ? "Adresse hors zone"
                           : "Complétez vos informations"}
                 </button>
-                <button onClick={clearCart} className="w-full text-white/30 hover:text-accent text-xs text-center py-1 transition-colors">
-                  Vider le panier
-                </button>
-              </>
-            )}
+            <button onClick={clearCart} className="w-full text-white/30 hover:text-accent text-xs text-center py-1 transition-colors">
+              Vider le panier
+            </button>
           </div>
         )}
       </div>
