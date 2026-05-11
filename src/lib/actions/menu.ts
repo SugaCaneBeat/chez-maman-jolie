@@ -13,19 +13,23 @@ export async function createMenuItem(data: {
   boissonSubcategoryId?: string;
 }) {
   const supabase = createServerClient();
-  const { error } = await supabase.from("menu_items").insert({
-    category_id: data.categoryId,
-    name: data.name,
-    price: data.price,
-    image: data.image || null,
-    accompagnement: data.accompagnement || null,
-    badge: data.badge || null,
-    boisson_subcategory_id: data.boissonSubcategoryId || null,
-  });
+  const { data: created, error } = await supabase
+    .from("menu_items")
+    .insert({
+      category_id: data.categoryId,
+      name: data.name,
+      price: data.price,
+      image: data.image || null,
+      accompagnement: data.accompagnement || null,
+      badge: data.badge || null,
+      boisson_subcategory_id: data.boissonSubcategoryId || null,
+    })
+    .select()
+    .single();
   if (error) return { success: false, error: error.message };
   revalidatePath("/admin/menu");
   revalidatePath("/");
-  return { success: true };
+  return { success: true, item: created };
 }
 
 export async function toggleIsSpecialite(id: string, is_specialite: boolean) {

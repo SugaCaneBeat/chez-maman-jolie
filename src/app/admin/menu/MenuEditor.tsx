@@ -1,380 +1,461 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import {
   createMenuItem, updateMenuItem, deleteMenuItem,
   toggleItemAvailability, toggleIsSpecialite,
   createCategory, updateCategory, toggleCategoryActive, deleteCategory,
 } from "@/lib/actions/menu";
+import { useToast } from "../components/Toast";
 import ItemForm from "./ItemForm";
 import FormuleEditor from "./FormuleEditor";
 import BoissonsEditor from "./BoissonsEditor";
+import ItemsView from "./ItemsView";
+import CategorySidebar from "./CategorySidebar";
+import QuickAddItem from "./QuickAddItem";
 
-interface Category {
-  id: string; slug: string; name: string; icon: string; type: string; active?: boolean;
-}
-interface Item {
-  id: string; category_id: string; name: string; price: number;
-  image: string | null; accompagnement: string | null; badge: string | null;
-  available: boolean; is_specialite?: boolean;
+export interface Category {
+  id: string;
+  slug: string;
+  name: string;
+  icon: string;
+  type: string;
+  active?: boolean;
 }
 
-export default function MenuEditor({
-  initialCategories, initialItems,
-}: {
+export interface Item {
+  id: string;
+  category_id: string;
+  name: string;
+  price: number;
+  image: string | null;
+  accompagnement: string | null;
+  badge: string | null;
+  available: boolean;
+  is_specialite?: boolean;
+  display_order?: number;
+}
+
+export type ViewMode = "grid" | "list";
+
+interface Props {
   initialCategories: Category[];
   initialItems: Item[];
-}) {
+  globalStats: {
+    totalItems: number;
+    availableItems: number;
+    withImage: number;
+    specialites: number;
+    avgPrice: number;
+  };
+}
+
+export default function MenuEditor({ initialCategories, initialItems }: Props) {
   const [categories, setCategories] = useState<Category[]>(
-    initialCategories.map(c => ({ ...c, active: c.active ?? true }))
+    initialCategories.map((c) => ({ ...c, active: c.active ?? true }))
   );
-  const [selectedCat, setSelectedCat] = useState(initialCategories[0]?.id || "");
-  const [items, setItems]             = useState(initialItems);
-  const [showForm, setShowForm]       = useState(false);
+  const [items, setItems] = useState(initialItems);
+  const [selectedCat, setSelectedCat] = useState(
+    initialCategories.find((c) => c.type === "standard")?.id ||
+    initialCategories[0]?.id || ""
+  );
+
+  /* UI state */
+  const [view, setView]             = useState<ViewMode>("grid");
+  const [search, setSearch]         = useState("");
+  const [showOnly, setShowOnly]     = useState<"all" | "available" | "unavailable" | "speciality">("all");
   const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [showFullForm, setShowFullForm] = useState(false);
 
-  // Cat inline edit
-  const [editingCatId, setEditingCatId] = useState<string | null>(null);
-  const [editCatName, setEditCatName]   = useState("");
-  const [editCatIcon, setEditCatIcon]   = useState("");
+  /* Selection state pour bulk actions */
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // New cat
-  const [showNewCat, setShowNewCat] = useState(false);
-  const [newCatName, setNewCatName] = useState("");
-  const [newCatIcon, setNewCatIcon] = useState("");
+  const [, startTransition] = useTransition();
+  const toast = useToast();
 
-  /* ── helpers ── */
-  const itemCount = (catId: string) => items.filter(i => i.category_id === catId).length;
-  const filteredItems = items.filter(i => i.category_id === selectedCat);
-  const fmt = (p: number) => p % 1 === 0 ? `${p} €` : `${p.toFixed(2).replace(".", ",")} €`;
+  const selectedCategory = categories.find((c) => c.id === selectedCat);
 
-  /* ── item actions ── */
-  const handleToggle = async (id: string, available: boolean) => {
-    setItems(prev => prev.map(i => i.id === id ? { ...i, available } : i));
-    await toggleItemAvailability(id, available);
-  };
-  const handleToggleSpe = async (id: string, is_specialite: boolean) => {
-    setItems(prev => prev.map(i => i.id === id ? { ...i, is_specialite } : i));
-    await toggleIsSpecialite(id, is_specialite);
-  };
-  const handleDelete = async (id: string) => {
-    if (!confirm("Supprimer cet article ?")) return;
-    setItems(prev => prev.filter(i => i.id !== id));
-    await deleteMenuItem(id);
-  };
-  const handleSave = async (data: { name: string; price: number; image?: string; accompagnement?: string; badge?: string; categoryId: string }) => {
-    if (editingItem) {
-      await updateMenuItem(editingItem.id, data);
-      setItems(prev => prev.map(i => i.id === editingItem.id ? {
-        ...i, name: data.name, price: data.price,
-        image: data.image || null, accompagnement: data.accompagnement || null,
-        badge: data.badge || null, category_id: data.categoryId,
-      } : i));
-    } else {
-      const r = await createMenuItem({ categoryId: data.categoryId, name: data.name, price: data.price, image: data.image, accompagnement: data.accompagnement, badge: data.badge });
-      if (r.success) window.location.reload();
+  const categoryItems = useMemo(
+    () => items.filter((i) => i.category_id === selectedCat),
+    [items, selectedCat]
+  );
+
+  const filteredItems = useMemo(() => {
+    let res = categoryItems;
+    if (showOnly === "available") res = res.filter((i) => i.available);
+    else if (showOnly === "unavailable") res = res.filter((i) => !i.available);
+    else if (showOnly === "speciality") res = res.filter((i) => i.is_specialite);
+    const q = search.trim().toLowerCase();
+    if (q) {
+      res = res.filter(
+        (i) =>
+          i.name.toLowerCase().includes(q) ||
+          (i.accompagnement ?? "").toLowerCase().includes(q) ||
+          (i.badge ?? "").toLowerCase().includes(q)
+      );
     }
-    setShowForm(false); setEditingItem(null);
+    return res;
+  }, [categoryItems, showOnly, search]);
+
+  /* Stats catégorie */
+  const catStats = useMemo(() => {
+    const total = categoryItems.length;
+    const available = categoryItems.filter((i) => i.available).length;
+    const speciality = categoryItems.filter((i) => i.is_specialite).length;
+    const withImg = categoryItems.filter((i) => i.image).length;
+    const avg = total > 0
+      ? categoryItems.reduce((s, i) => s + Number(i.price), 0) / total
+      : 0;
+    return { total, available, speciality, withImg, avg };
+  }, [categoryItems]);
+
+  /* ── Item actions ── */
+  const handleToggleAvail = (id: string, available: boolean) => {
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, available } : i)));
+    startTransition(async () => {
+      const r = await toggleItemAvailability(id, available);
+      if (r.success) {
+        toast.success(available ? "Plat disponible" : "Plat masqué");
+      } else {
+        toast.error("Erreur", "Impossible de modifier");
+      }
+    });
   };
 
-  /* ── category actions ── */
-  const handleToggleCat = async (id: string, active: boolean) => {
-    setCategories(prev => prev.map(c => c.id === id ? { ...c, active } : c));
-    await toggleCategoryActive(id, active);
+  const handleToggleSpe = (id: string, is_specialite: boolean) => {
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, is_specialite } : i)));
+    startTransition(async () => {
+      await toggleIsSpecialite(id, is_specialite);
+      toast.success(is_specialite ? "Marqué spécialité" : "Retiré des spécialités");
+    });
   };
-  const startEditCat = (cat: Category) => {
-    setEditingCatId(cat.id); setEditCatName(cat.name); setEditCatIcon(cat.icon);
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Supprimer "${name}" ? Cette action est définitive.`)) return;
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    startTransition(async () => {
+      const r = await deleteMenuItem(id);
+      if (r.success) toast.success("Plat supprimé", name);
+      else toast.error("Erreur", "Suppression échouée");
+    });
   };
-  const cancelEditCat = () => { setEditingCatId(null); setEditCatName(""); setEditCatIcon(""); };
-  const saveEditCat = async (id: string) => {
-    const name = editCatName.trim(); if (!name) return;
-    setCategories(prev => prev.map(c => c.id === id ? { ...c, name, icon: editCatIcon } : c));
-    await updateCategory(id, { name, icon: editCatIcon });
-    cancelEditCat();
+
+  const handleSaveItem = async (data: {
+    name: string; price: number; image?: string;
+    accompagnement?: string; badge?: string; categoryId: string;
+  }) => {
+    if (editingItem) {
+      setItems((prev) =>
+        prev.map((i) => (i.id === editingItem.id ? {
+          ...i, name: data.name, price: data.price,
+          image: data.image || null, accompagnement: data.accompagnement || null,
+          badge: data.badge || null, category_id: data.categoryId,
+        } : i))
+      );
+      startTransition(async () => {
+        const r = await updateMenuItem(editingItem.id, data);
+        if (r.success) toast.success("Plat modifié", data.name);
+        else toast.error("Erreur", "Modification échouée");
+      });
+    } else {
+      startTransition(async () => {
+        const r = await createMenuItem({
+          categoryId: data.categoryId,
+          name: data.name, price: data.price,
+          image: data.image, accompagnement: data.accompagnement, badge: data.badge,
+        });
+        if (r.success && r.item) {
+          setItems((prev) => [...prev, r.item as Item]);
+          toast.success("Plat ajouté", data.name);
+        } else {
+          toast.error("Erreur", "Création échouée");
+        }
+      });
+    }
+    setShowFullForm(false);
+    setEditingItem(null);
   };
+
+  const handleQuickAdd = async (data: { name: string; price: number; categoryId: string }) => {
+    startTransition(async () => {
+      const r = await createMenuItem({
+        categoryId: data.categoryId,
+        name: data.name,
+        price: data.price,
+      });
+      if (r.success && r.item) {
+        setItems((prev) => [...prev, r.item as Item]);
+        toast.success("Plat ajouté", `${data.name} — ${data.price} €`);
+      } else {
+        toast.error("Erreur", "Création échouée");
+      }
+    });
+    setShowQuickAdd(false);
+  };
+
+  /* ── Bulk actions ── */
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredItems.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredItems.map((i) => i.id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
+  };
+
+  const bulkSetAvailable = (available: boolean) => {
+    const ids = Array.from(selectedIds);
+    setItems((prev) => prev.map((i) => (selectedIds.has(i.id) ? { ...i, available } : i)));
+    startTransition(async () => {
+      await Promise.all(ids.map((id) => toggleItemAvailability(id, available)));
+      toast.success(`${ids.length} plats ${available ? "rendus disponibles" : "masqués"}`);
+    });
+    setSelectedIds(new Set());
+  };
+
+  const bulkDelete = () => {
+    const ids = Array.from(selectedIds);
+    if (!confirm(`Supprimer ${ids.length} plats sélectionnés ?`)) return;
+    setItems((prev) => prev.filter((i) => !selectedIds.has(i.id)));
+    startTransition(async () => {
+      await Promise.all(ids.map((id) => deleteMenuItem(id)));
+      toast.success(`${ids.length} plats supprimés`);
+    });
+    setSelectedIds(new Set());
+  };
+
+  /* ── Category actions ── */
+  const handleToggleCat = (id: string, active: boolean) => {
+    setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, active } : c)));
+    startTransition(async () => {
+      await toggleCategoryActive(id, active);
+      toast.success(active ? "Catégorie activée" : "Catégorie désactivée");
+    });
+  };
+
+  const handleSaveCategory = async (id: string, data: { name: string; icon: string }) => {
+    setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, ...data } : c)));
+    startTransition(async () => {
+      await updateCategory(id, data);
+      toast.success("Catégorie modifiée");
+    });
+  };
+
   const handleDeleteCat = async (cat: Category) => {
     if (!confirm(`Supprimer "${cat.name}" ?`)) return;
     const r = await deleteCategory(cat.id);
-    if (!r.success) { alert(r.error || "Erreur"); return; }
-    setCategories(prev => prev.filter(c => c.id !== cat.id));
-    if (selectedCat === cat.id) setSelectedCat(categories.filter(c => c.id !== cat.id)[0]?.id || "");
+    if (!r.success) {
+      toast.error("Erreur", r.error || "Suppression échouée");
+      return;
+    }
+    setCategories((prev) => prev.filter((c) => c.id !== cat.id));
+    if (selectedCat === cat.id) {
+      setSelectedCat(categories.filter((c) => c.id !== cat.id)[0]?.id || "");
+    }
+    toast.success("Catégorie supprimée");
   };
-  const handleCreateCat = async () => {
-    const name = newCatName.trim(); if (!name) return;
-    const r = await createCategory({ name, icon: newCatIcon });
-    if (!r.success || !r.category) { alert(r.error || "Erreur"); return; }
-    const cat = r.category as Category;
-    setCategories(prev => [...prev, { ...cat, active: true }]);
-    setSelectedCat(cat.id);
-    setNewCatName(""); setNewCatIcon(""); setShowNewCat(false);
+
+  const handleCreateCat = async (data: { name: string; icon: string }) => {
+    const r = await createCategory(data);
+    if (!r.success || !r.category) {
+      toast.error("Erreur", r.error || "Création échouée");
+      return false;
+    }
+    setCategories((prev) => [...prev, { ...(r.category as Category), active: true }]);
+    setSelectedCat((r.category as Category).id);
+    toast.success("Catégorie créée", data.name);
+    return true;
   };
 
   return (
-    <div className="flex gap-0 min-h-[600px] bg-white rounded-[5px] border border-gray-100 overflow-hidden shadow-sm">
+    <div className="bg-white rounded-[5px] border border-gray-100 shadow-sm overflow-hidden flex flex-col lg:flex-row min-h-[600px]">
+      {/* SIDEBAR CATÉGORIES */}
+      <CategorySidebar
+        categories={categories}
+        items={items}
+        selectedId={selectedCat}
+        onSelect={(id) => { setSelectedCat(id); setSelectedIds(new Set()); setSearch(""); }}
+        onToggle={handleToggleCat}
+        onSave={handleSaveCategory}
+        onDelete={handleDeleteCat}
+        onCreate={handleCreateCat}
+      />
 
-      {/* ═══════════════════════════════════
-          SIDEBAR CATÉGORIES
-          ═══════════════════════════════════ */}
-      <aside className="w-56 flex-shrink-0 border-r border-gray-100 flex flex-col">
-        <div className="px-3 py-3 border-b border-gray-100">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Catégories</p>
-        </div>
-
-        <nav className="flex-1 overflow-y-auto py-2 space-y-0.5 px-2">
-          {categories.map(cat => {
-            const isSelected = selectedCat === cat.id;
-            const isEditing  = editingCatId === cat.id;
-            const count      = itemCount(cat.id);
-
-            if (isEditing) return (
-              <div key={cat.id} className="rounded-[5px] border border-[#C9922A] bg-amber-50 p-2 space-y-1.5">
-                <div className="flex gap-1">
-                  <input value={editCatIcon} onChange={e => setEditCatIcon(e.target.value)}
-                    placeholder="🍽️" className="w-10 border border-gray-200 rounded-[5px] px-1.5 py-1 text-sm text-center focus:outline-none focus:border-[#C9922A]" />
-                  <input value={editCatName} onChange={e => setEditCatName(e.target.value)}
-                    placeholder="Nom" autoFocus
-                    className="flex-1 border border-gray-200 rounded-[5px] px-2 py-1 text-xs focus:outline-none focus:border-[#C9922A]" />
+      {/* CONTENU PRINCIPAL */}
+      <main className="flex-1 flex flex-col overflow-hidden bg-gray-50/50">
+        {selectedCategory?.type === "formules" && (
+          <FormuleEditor categoryId={selectedCategory.id} categoryName={selectedCategory.name} />
+        )}
+        {selectedCategory?.type === "boissons" && (
+          <BoissonsEditor categoryId={selectedCategory.id} categoryName={selectedCategory.name} />
+        )}
+        {(!selectedCategory || selectedCategory.type === "standard") && selectedCategory && (
+          <>
+            {/* Header catégorie */}
+            <div className="px-5 py-4 border-b border-gray-100 bg-white">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-2xl">{selectedCategory.icon || "🍽️"}</span>
+                  <div className="min-w-0">
+                    <h2 className="font-heading text-xl font-bold text-gray-900 truncate">{selectedCategory.name}</h2>
+                    <p className="text-xs text-gray-400">
+                      {catStats.total} plat{catStats.total !== 1 ? "s" : ""}
+                      {" · "}{catStats.available} dispo
+                      {catStats.speciality > 0 && ` · ${catStats.speciality} spécialité${catStats.speciality !== 1 ? "s" : ""}`}
+                      {catStats.total > 0 && ` · ${catStats.avg.toFixed(0)} € moyen`}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex gap-1">
-                  <button onClick={() => saveEditCat(cat.id)}
-                    className="flex-1 bg-[#C9922A] text-white text-xs font-bold py-1 rounded-[5px] hover:bg-[#b8831f]">✓</button>
-                  <button onClick={cancelEditCat}
-                    className="flex-1 text-gray-400 text-xs py-1 rounded-[5px] hover:bg-gray-100">✕</button>
-                </div>
-              </div>
-            );
-
-            return (
-              <div key={cat.id}
-                className={`group flex items-center gap-1.5 rounded-[5px] px-2 py-1.5 cursor-pointer transition-colors ${
-                  isSelected ? "bg-[#C9922A] text-[#111008]" : "hover:bg-gray-50 text-gray-700"
-                } ${!cat.active ? "opacity-50" : ""}`}
-                onClick={() => { setSelectedCat(cat.id); setShowForm(false); }}
-              >
-                {/* Icône + nom */}
-                <span className="text-base leading-none">{cat.icon}</span>
-                <span className={`flex-1 text-xs font-medium truncate ${isSelected ? "font-bold" : ""}`}>{cat.name}</span>
-
-                {/* Compteur articles */}
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-[5px] ${
-                  isSelected ? "bg-black/10 text-[#111008]" : "bg-gray-100 text-gray-400"
-                }`}>{count}</span>
-
-                {/* Actions au hover */}
-                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
-                  {/* Toggle actif */}
-                  <button onClick={() => handleToggleCat(cat.id, !cat.active)}
-                    title={cat.active ? "Désactiver" : "Activer"}
-                    className={`w-5 h-3 rounded-full relative flex-shrink-0 transition-colors ${cat.active ? "bg-green-400" : "bg-gray-300"}`}>
-                    <span className={`absolute top-0.5 w-2 h-2 bg-white rounded-full shadow transition-all ${cat.active ? "left-2.5" : "left-0.5"}`} />
-                  </button>
-                  {/* Éditer */}
-                  <button onClick={() => startEditCat(cat)} title="Renommer"
-                    className={`p-0.5 rounded ${isSelected ? "text-[#111008]/60 hover:text-[#111008]" : "text-gray-400 hover:text-[#C9922A]"}`}>
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                  </button>
-                  {/* Supprimer */}
-                  {count === 0 && (
-                    <button onClick={() => handleDeleteCat(cat)} title="Supprimer"
-                      className="p-0.5 rounded text-gray-400 hover:text-red-500">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {/* View toggle */}
+                  <div className="bg-gray-100 rounded-[5px] p-0.5 flex">
+                    <button
+                      onClick={() => setView("grid")}
+                      title="Vue cartes"
+                      className={`px-2 py-1.5 rounded-[5px] text-xs transition-colors ${view === "grid" ? "bg-white text-[#C9922A] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
                     </button>
-                  )}
+                    <button
+                      onClick={() => setView("list")}
+                      title="Vue liste"
+                      className={`px-2 py-1.5 rounded-[5px] text-xs transition-colors ${view === "list" ? "bg-white text-[#C9922A] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                    </button>
+                  </div>
+
+                  {/* Add buttons */}
+                  <button
+                    onClick={() => setShowQuickAdd(true)}
+                    className="px-3 py-2 bg-[#C9922A] hover:bg-[#b8831f] text-white text-xs font-bold rounded-[5px] flex items-center gap-1.5 transition-colors"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
+                    Ajout rapide
+                  </button>
+                  <button
+                    onClick={() => { setEditingItem(null); setShowFullForm(true); }}
+                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-[5px] transition-colors"
+                  >
+                    Avec photo
+                  </button>
                 </div>
               </div>
-            );
-          })}
-        </nav>
 
-        {/* Nouvelle catégorie */}
-        <div className="px-2 py-2 border-t border-gray-100">
-          {showNewCat ? (
-            <div className="rounded-[5px] border border-[#C9922A] bg-amber-50 p-2 space-y-1.5">
-              <div className="flex gap-1">
-                <input value={newCatIcon} onChange={e => setNewCatIcon(e.target.value)}
-                  placeholder="🍽️" className="w-10 border border-gray-200 rounded-[5px] px-1.5 py-1 text-sm text-center focus:outline-none focus:border-[#C9922A]" />
-                <input value={newCatName} onChange={e => setNewCatName(e.target.value)}
-                  placeholder="Nom…" autoFocus
-                  onKeyDown={e => e.key === "Enter" && handleCreateCat()}
-                  className="flex-1 border border-gray-200 rounded-[5px] px-2 py-1 text-xs focus:outline-none focus:border-[#C9922A]" />
-              </div>
-              <div className="flex gap-1">
-                <button onClick={handleCreateCat}
-                  className="flex-1 bg-[#C9922A] text-white text-xs font-bold py-1 rounded-[5px] hover:bg-[#b8831f]">Créer</button>
-                <button onClick={() => { setShowNewCat(false); setNewCatName(""); setNewCatIcon(""); }}
-                  className="flex-1 text-gray-400 text-xs py-1 rounded-[5px] hover:bg-gray-100">Annuler</button>
-              </div>
-            </div>
-          ) : (
-            <button onClick={() => setShowNewCat(true)}
-              className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-[5px] text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-50 border border-dashed border-gray-200 transition-colors">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-              Nouvelle catégorie
-            </button>
-          )}
-        </div>
-      </aside>
-
-      {/* ═══════════════════════════════════
-          ZONE ARTICLES / FORMULES
-          ═══════════════════════════════════ */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        {(() => {
-          const selectedCategory = categories.find(c => c.id === selectedCat);
-
-          /* ── Formules category → delegate to FormuleEditor ── */
-          if (selectedCategory?.type === "formules") {
-            return (
-              <FormuleEditor
-                categoryId={selectedCat}
-                categoryName={selectedCategory.name}
-              />
-            );
-          }
-
-          /* ── Boissons category → delegate to BoissonsEditor ── */
-          if (selectedCategory?.type === "boissons") {
-            return (
-              <BoissonsEditor
-                categoryId={selectedCat}
-                categoryName={selectedCategory.name}
-              />
-            );
-          }
-
-          /* ── Standard category ── */
-          return (
-            <>
-              {/* Header */}
-              <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
-                <div>
-                  <h2 className="font-bold text-gray-900 text-sm">
-                    {selectedCategory?.icon}{" "}
-                    {selectedCategory?.name}
-                  </h2>
-                  <p className="text-gray-400 text-xs">{filteredItems.length} article{filteredItems.length !== 1 ? "s" : ""}</p>
-                </div>
-                <button
-                  onClick={() => { setEditingItem(null); setShowForm(v => !v); }}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-[5px] text-sm font-bold transition-colors ${
-                    showForm ? "bg-gray-100 text-gray-600" : "bg-[#C9922A] text-[#111008] hover:bg-[#E0AD4A]"
-                  }`}
-                >
-                  {showForm ? "✕ Fermer" : "+ Ajouter"}
-                </button>
-              </div>
-
-              {/* Formulaire inline */}
-              {showForm && (
-                <div className="px-5 py-4 border-b border-gray-100 bg-gray-50">
-                  <ItemForm
-                    item={editingItem}
-                    categories={categories.map(c => ({ id: c.id, name: c.name, icon: c.icon }))}
-                    currentCategoryId={selectedCat}
-                    onSave={handleSave}
-                    onCancel={() => { setShowForm(false); setEditingItem(null); }}
+              {/* Toolbar */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative flex-1 min-w-[180px]">
+                  <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Rechercher dans cette catégorie…"
+                    className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-[5px] text-xs focus:outline-none focus:border-[#C9922A] focus:ring-2 focus:ring-[#C9922A]/10"
                   />
                 </div>
+                {(["all", "available", "unavailable", "speciality"] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setShowOnly(f)}
+                    className={`px-2.5 py-1.5 rounded-[5px] text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                      showOnly === f
+                        ? "bg-[#C9922A] text-[#111008]"
+                        : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    {f === "all" ? "Tous" : f === "available" ? "Dispo" : f === "unavailable" ? "Masqués" : "⭐ Spé."}
+                  </button>
+                ))}
+              </div>
+
+              {/* Bulk actions bar */}
+              {selectedIds.size > 0 && (
+                <div className="mt-3 flex items-center gap-2 bg-[#C9922A]/10 border border-[#C9922A]/30 rounded-[5px] px-3 py-2 flex-wrap">
+                  <span className="text-xs font-bold text-[#C9922A]">
+                    {selectedIds.size} sélectionné{selectedIds.size !== 1 ? "s" : ""}
+                  </span>
+                  <div className="flex-1" />
+                  <button
+                    onClick={() => bulkSetAvailable(true)}
+                    className="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold uppercase rounded-[5px]"
+                  >
+                    Rendre dispo
+                  </button>
+                  <button
+                    onClick={() => bulkSetAvailable(false)}
+                    className="px-2.5 py-1 bg-gray-500 hover:bg-gray-600 text-white text-[10px] font-bold uppercase rounded-[5px]"
+                  >
+                    Masquer
+                  </button>
+                  <button
+                    onClick={bulkDelete}
+                    className="px-2.5 py-1 bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold uppercase rounded-[5px]"
+                  >
+                    Supprimer
+                  </button>
+                  <button
+                    onClick={() => setSelectedIds(new Set())}
+                    className="px-2.5 py-1 text-gray-500 hover:text-gray-700 text-[10px] font-bold uppercase"
+                  >
+                    Désélectionner
+                  </button>
+                </div>
               )}
+            </div>
 
-              {/* Légende colonnes */}
-              <div className="flex items-center gap-3 px-5 py-2 border-b border-gray-50 bg-gray-50/50">
-                <div className="w-12 flex-shrink-0" />
-                <div className="flex-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Article</div>
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider w-16 text-right">Prix</div>
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider w-20 text-center">Spécialité</div>
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider w-16 text-center">Dispo</div>
-                <div className="w-14" />
+            {/* Formulaire complet inline */}
+            {showFullForm && (
+              <div className="px-5 py-4 border-b border-gray-100 bg-amber-50/30">
+                <ItemForm
+                  item={editingItem}
+                  categories={categories.map((c) => ({ id: c.id, name: c.name, icon: c.icon }))}
+                  currentCategoryId={selectedCat}
+                  onSave={handleSaveItem}
+                  onCancel={() => { setShowFullForm(false); setEditingItem(null); }}
+                />
               </div>
+            )}
 
-              {/* Liste articles */}
-              <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
-                {filteredItems.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-gray-300">
-                    <svg className="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                    <p className="text-sm">Aucun article</p>
-                    <button onClick={() => { setEditingItem(null); setShowForm(true); }}
-                      className="mt-3 text-xs text-[#C9922A] hover:underline">+ Ajouter le premier</button>
-                  </div>
-                ) : (
-                  filteredItems.map(item => (
-                    <div key={item.id} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors group">
+            {/* Items view (grid ou list) */}
+            <ItemsView
+              items={filteredItems}
+              view={view}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelect}
+              onSelectAll={toggleSelectAll}
+              onToggleAvail={handleToggleAvail}
+              onToggleSpe={handleToggleSpe}
+              onEdit={(item) => { setEditingItem(item); setShowFullForm(true); }}
+              onDelete={(item) => handleDelete(item.id, item.name)}
+              hasSearch={!!search || showOnly !== "all"}
+              onResetFilters={() => { setSearch(""); setShowOnly("all"); }}
+            />
+          </>
+        )}
 
-                      {/* Photo */}
-                      <div className="w-12 h-12 flex-shrink-0 rounded-[5px] overflow-hidden bg-gray-100 border border-gray-100">
-                        {item.image
-                          ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                          : <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">—</div>
-                        }
-                      </div>
-
-                      {/* Nom + badge + accompagnement */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-semibold text-gray-900 text-sm truncate">{item.name}</span>
-                          {item.badge && (
-                            <span className="px-1.5 py-0.5 rounded-[5px] text-[9px] font-bold bg-red-50 text-red-500 uppercase tracking-wide flex-shrink-0">{item.badge}</span>
-                          )}
-                        </div>
-                        {item.accompagnement && (
-                          <p className="text-gray-400 text-xs truncate">{item.accompagnement}</p>
-                        )}
-                      </div>
-
-                      {/* Prix */}
-                      <span className="font-bold text-[#C9922A] text-sm w-16 text-right flex-shrink-0">{fmt(Number(item.price))}</span>
-
-                      {/* ⭐ Spécialité — toujours visible, coloré si actif */}
-                      <div className="w-20 flex justify-center flex-shrink-0">
-                        <button
-                          onClick={() => handleToggleSpe(item.id, !item.is_specialite)}
-                          title={item.is_specialite ? "Retirer des Spécialités" : "Marquer comme Spécialité"}
-                          className={`flex items-center gap-1 px-2 py-1 rounded-[5px] text-xs font-medium transition-all ${
-                            item.is_specialite
-                              ? "bg-amber-50 text-amber-500 border border-amber-200"
-                              : "bg-gray-50 text-gray-300 border border-gray-100 hover:text-amber-400 hover:border-amber-200"
-                          }`}
-                        >
-                          ⭐
-                        </button>
-                      </div>
-
-                      {/* Dispo toggle */}
-                      <div className="w-16 flex justify-center flex-shrink-0">
-                        <button
-                          onClick={() => handleToggle(item.id, !item.available)}
-                          title={item.available ? "Disponible — cliquer pour masquer" : "Indisponible — cliquer pour activer"}
-                          className={`w-11 h-6 rounded-full relative transition-colors flex-shrink-0 ${item.available ? "bg-green-400" : "bg-gray-200"}`}
-                        >
-                          <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all duration-200 ${item.available ? "left-[22px]" : "left-0.5"}`} />
-                        </button>
-                      </div>
-
-                      {/* Éditer + Supprimer */}
-                      <div className="w-14 flex items-center justify-end gap-1 flex-shrink-0">
-                        <button
-                          onClick={() => { setEditingItem(item); setShowForm(true); }}
-                          title="Modifier"
-                          className="p-1.5 rounded-[5px] text-gray-300 hover:text-[#C9922A] hover:bg-amber-50 transition-colors"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                        </button>
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          title="Supprimer"
-                          className="p-1.5 rounded-[5px] text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </>
-          );
-        })()}
+        {!selectedCategory && (
+          <div className="flex-1 flex items-center justify-center p-10 text-gray-300 text-sm">
+            Sélectionnez une catégorie
+          </div>
+        )}
       </main>
+
+      {/* QUICK ADD MODAL */}
+      {showQuickAdd && selectedCategory && (
+        <QuickAddItem
+          defaultCategoryId={selectedCat}
+          categories={categories.map((c) => ({ id: c.id, name: c.name, icon: c.icon }))}
+          onAdd={handleQuickAdd}
+          onClose={() => setShowQuickAdd(false)}
+        />
+      )}
     </div>
   );
 }
