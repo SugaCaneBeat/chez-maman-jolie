@@ -8,7 +8,7 @@ import { resolveZone, type ZoneInfo, type GeocodedAddress, DEPART_LABEL } from "
 import Image from "next/image";
 
 /* ─── Payment methods ─── */
-const PHONE  = "+33 7 44 27 54 28";
+const PHONE  = "+33 7 53 87 32 13";
 const DEPART = "Paris 11ème";
 
 /* Minimum de commande */
@@ -328,7 +328,7 @@ export default function CartDrawer() {
       }
     } catch {}
     setSaving(false);
-    window.open(`https://wa.me/33744275428?text=${buildWAMessage(payMethod, paid, ref)}`, "_blank");
+    window.open(`https://wa.me/33753873213?text=${buildWAMessage(payMethod, paid, ref)}`, "_blank");
     /* clear cart once the order is placed */
     clearCart();
     setStep("sent");

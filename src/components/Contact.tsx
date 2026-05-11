@@ -31,8 +31,8 @@ export default function Contact() {
               </div>
               <div>
                 <h3 className="font-heading font-bold text-white text-lg mb-2">T&eacute;l&eacute;phone</h3>
-                <a href="tel:+33744275428" className="text-primary font-semibold text-lg hover:text-primary-light transition-colors">
-                  07 44 27 54 28
+                <a href="tel:+33753873213" className="text-primary font-semibold text-lg hover:text-primary-light transition-colors">
+                  07 53 87 32 13
                 </a>
               </div>
             </div>
@@ -49,7 +49,7 @@ export default function Contact() {
                   <h3 className="font-heading font-bold text-white text-lg mb-1">WhatsApp</h3>
                   <p className="text-white/40 text-sm mb-2">Le moyen le plus rapide de commander</p>
                   <a
-                    href="https://wa.me/33744275428"
+                    href="https://wa.me/33753873213"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-[#25D366] font-semibold text-sm hover:text-[#20BD5A] transition-colors"

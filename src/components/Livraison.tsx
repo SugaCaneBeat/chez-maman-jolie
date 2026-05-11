@@ -196,7 +196,7 @@ export default function Livraison({ data }: { data: LivraisonData }) {
               Commander maintenant
             </CommanderButton>
             <a
-              href="https://wa.me/33744275428"
+              href="https://wa.me/33753873213"
               target="_blank"
               rel="noopener noreferrer"
               className="group inline-flex items-center gap-3 glass hover:bg-white/10 text-white font-semibold px-6 py-4 rounded-[5px] text-sm transition-all hover:scale-105"

@@ -235,7 +235,7 @@ export default function OrderStatusView({
 
         {/* CTA WhatsApp */}
         <a
-          href="https://wa.me/33744275428"
+          href="https://wa.me/33753873213"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 w-full bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-[#25D366] font-semibold py-3 rounded-[5px] text-sm transition-colors"

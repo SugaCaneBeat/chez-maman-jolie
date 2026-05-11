@@ -238,7 +238,7 @@ export default function Header() {
           {/* Bottom CTA + contact */}
           <div className="px-5 pb-8 pt-4 space-y-3" style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom))" }}>
             <a
-              href="https://wa.me/33744275428"
+              href="https://wa.me/33753873213"
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setIsOpen(false)}
@@ -265,7 +265,7 @@ export default function Header() {
             </button>
 
             <p className="text-center text-white/30 text-xs pt-2">
-              07 44 27 54 28 &middot; Lun-Dim 11h&ndash;22h
+              07 53 87 32 13 &middot; Lun-Dim 11h&ndash;22h
             </p>
           </div>
         </div>
