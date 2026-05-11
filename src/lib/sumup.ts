@@ -98,10 +98,7 @@ export async function getSumUpCheckout(id: string): Promise<SumUpCheckout | null
   return (await res.json()) as SumUpCheckout;
 }
 
-/* ─── Hosted checkout page URL ───
- * SumUp redirects customer to a hosted page where they enter their card.
- * After payment, customer is redirected to return_url.
- */
-export function getHostedCheckoutUrl(checkoutId: string): string {
-  return `https://pay.sumup.com/b2c/${checkoutId}`;
-}
+/* SumUp ne propose pas de page hébergée publique pour les checkouts B2C.
+ * Le flow correct: créer un checkout côté serveur, récupérer le checkout_id,
+ * puis monter le widget JS SumUp (gateway.sumup.com/.../sdk.js) côté client
+ * sur une page de notre site (/checkout/[orderId]). */

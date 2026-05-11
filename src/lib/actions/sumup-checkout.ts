@@ -3,7 +3,6 @@
 import {
   createSumUpCheckout,
   getSumUpCheckout,
-  getHostedCheckoutUrl,
   isSumUpConfigured,
 } from "@/lib/sumup";
 import { createServerClient } from "@/lib/supabase/server";
@@ -20,12 +19,15 @@ function getBaseUrl(): string {
 /* ─── Crée un checkout SumUp pour une commande existante ───
  *  Le checkout_id et le checkout_reference sont sauvegardés dans la table
  *  orders (colonnes sumup_checkout_id / sumup_reference) si elles existent.
+ *
+ *  Retourne le checkout_id que le client utilise pour mount le widget
+ *  SumUp sur notre page /checkout/[orderId].
  */
 export async function createSumUpCheckoutForOrder(
   orderId: string,
   orderNumber: number,
   amount: number
-): Promise<{ success: boolean; checkoutUrl?: string; error?: string }> {
+): Promise<{ success: boolean; checkoutId?: string; error?: string }> {
   if (!isSumUpConfigured()) {
     return {
       success: false,
@@ -35,6 +37,8 @@ export async function createSumUpCheckoutForOrder(
 
   try {
     const reference = `order-${orderNumber}-${Date.now()}`;
+    /* return_url is informational on the checkout — le widget gère lui-même
+       la suite via onResponse côté client. */
     const returnUrl = `${getBaseUrl()}/commande/${orderId}?source=sumup`;
 
     const checkout = await createSumUpCheckout({
@@ -58,9 +62,37 @@ export async function createSumUpCheckoutForOrder(
       /* table may not have those columns yet; on s'en fiche pour le flow */
     }
 
-    return { success: true, checkoutUrl: getHostedCheckoutUrl(checkout.id) };
+    return { success: true, checkoutId: checkout.id };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/* ─── Récupère le checkout_id d'une commande (pour la page /checkout) ─── */
+export async function getOrderCheckoutId(orderId: string): Promise<{
+  checkoutId: string | null;
+  status: string | null;
+  amount: number;
+  orderNumber: number | null;
+}> {
+  try {
+    const supabase = createServerClient();
+    const { data: order } = await supabase
+      .from("orders")
+      .select("id, order_number, total, status, sumup_checkout_id")
+      .eq("id", orderId)
+      .single();
+
+    if (!order) return { checkoutId: null, status: null, amount: 0, orderNumber: null };
+
+    return {
+      checkoutId: order.sumup_checkout_id ?? null,
+      status: order.status ?? null,
+      amount: Number(order.total),
+      orderNumber: order.order_number,
+    };
+  } catch {
+    return { checkoutId: null, status: null, amount: 0, orderNumber: null };
   }
 }
 

@@ -281,13 +281,13 @@ export default function CartDrawer() {
         return;
       }
 
-      /* 2) Créer le checkout SumUp et rediriger */
+      /* 2) Créer le checkout SumUp côté serveur */
       const checkoutRes = await createSumUpCheckoutForOrder(
         orderRes.orderId,
         orderRes.orderNumber,
         grandTotal
       );
-      if (!checkoutRes.success || !checkoutRes.checkoutUrl) {
+      if (!checkoutRes.success || !checkoutRes.checkoutId) {
         setSaving(false);
         alert(
           checkoutRes.error ??
@@ -296,9 +296,10 @@ export default function CartDrawer() {
         return;
       }
 
-      /* 3) Vider le panier puis redirection vers SumUp */
+      /* 3) Vider le panier puis afficher notre page de paiement
+         (widget SumUp embarqué sur notre site, pas une page externe) */
       clearCart();
-      window.location.href = checkoutRes.checkoutUrl;
+      window.location.href = `/checkout/${orderRes.orderId}`;
     } catch (e) {
       setSaving(false);
       alert(e instanceof Error ? e.message : "Erreur");
