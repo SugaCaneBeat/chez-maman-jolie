@@ -76,7 +76,8 @@
       "Bash(curl -s \"https://chezmamanjolie.com/?nocache=$\\(date +%s\\)\")",
       "Bash(curl -s \"https://chezmamanjolie.com/?bust=$\\(date +%s\\)\" -H \"Cache-Control: no-cache\")",
       "Bash(curl -s \"https://chezmamanjolie.com/?v=$\\(date +%s%N\\)\" -H \"Cache-Control: no-cache, no-store\")",
-      "Bash(curl -s \"https://chezmamanjolie.com/?v=$\\(date +%s%N\\)\" -H \"Cache-Control: no-cache\")"
+      "Bash(curl -s \"https://chezmamanjolie.com/?v=$\\(date +%s%N\\)\" -H \"Cache-Control: no-cache\")",
+      "Bash(rm -f /tmp/vercel-live-backup.env && echo \"Backup supprimé. Tout est OK.\")"
     ]
   }
 }

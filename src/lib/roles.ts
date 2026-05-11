@@ -42,6 +42,7 @@ export const ROUTE_PERMISSIONS: Array<{ path: string; roles: AdminRole[] }> = [
   { path: "/admin/menu",         roles: ["admin", "tech"] },
   { path: "/admin/media",        roles: ["admin", "tech"] },
   { path: "/admin/users",        roles: ["admin"] },
+  { path: "/admin/help",         roles: ["admin", "caissier", "tech"] },
 ];
 
 /* Vérifie si un rôle a accès à un chemin donné. Le dashboard /admin est ouvert. */
