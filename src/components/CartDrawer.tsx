@@ -142,80 +142,82 @@ export default function CartDrawer() {
     }, 400);
   };
 
-  /* ── Build WhatsApp message — cleanly formatted ── */
+  /** Formate un numéro de téléphone en groupes de 2 chiffres */
+  const fmtPhone = (raw: string) => {
+    const digits = raw.replace(/\D/g, "");
+    if (digits.length < 10) return raw;
+    const country = digits.length > 10 ? digits.slice(0, 2) : "";
+    const local = digits.slice(country ? 2 : 0);
+    const first = local[0];
+    const rest = local.slice(1).match(/.{1,2}/g)?.join(" ") ?? "";
+    return country ? `+${country} ${first} ${rest}`.trim() : `${first} ${rest}`.trim();
+  };
+
+  /* ── Build WhatsApp message — clean professional layout ── */
   const buildWAMessage = (method: PayMethod, paid: boolean, ref: { id: string; number: number } | null) => {
     const labels: Record<PayMethod, string> = {
-      carte:  "Carte à la livraison",
+      carte:  "Carte bancaire (SumUp)",
       lydia:  "Lydia",
       paylib: "PayLib",
       wero:   "Wero",
     };
-
-    const sep = "━━━━━━━━━━━━━━━━━━";
-    const sub = "──────────────────";
-    const subT = formatPrice(subtotal);
     const grandT = formatPrice(grandTotal);
     const lines: string[] = [];
 
-    /* Header */
-    lines.push(sep);
-    lines.push("*CHEZ MAMAN JOLIE*");
-    if (ref) lines.push(`_Commande #${ref.number}_`);
-    lines.push(paid ? "✅ *PAIEMENT EFFECTUÉ* — _à préparer_" : "_Nouvelle commande_");
-    lines.push(sep);
+    /* En-tête épuré */
+    lines.push("*Chez Maman Jolie*");
     lines.push("");
-
-    /* Articles */
-    lines.push("🍽️ *ARTICLES*");
-    items.forEach(i => {
-      lines.push(`• ${i.name}  _x${i.quantity}_  —  ${formatPrice(i.price * i.quantity)}`);
-    });
-    lines.push("");
-    lines.push(`Sous-total :  ${subT}`);
-    if (deliveryFee > 0) {
-      lines.push(`Livraison (Zone ${zoneInfo?.zone}) :  ${formatPrice(deliveryFee)}`);
-    } else if (zoneInfo?.zone === 1) {
-      lines.push(`Livraison (Zone 1) :  _Gratuite_`);
+    if (paid) {
+      lines.push(ref ? `✅ *Commande #${ref.number} — Payée*` : "✅ *Commande — Payée*");
+    } else {
+      lines.push(ref ? `📥 *Nouvelle commande #${ref.number}*` : "📥 *Nouvelle commande*");
     }
-    lines.push(`*Total :*  *${grandT}*`);
-    lines.push("");
-    lines.push(sub);
     lines.push("");
 
     /* Client */
-    lines.push("👤 *CLIENT*");
+    lines.push("*Client*");
     lines.push(`${prenom} ${nom}`.trim());
-    lines.push(`📞 ${tel}`);
+    lines.push(fmtPhone(tel));
     lines.push("");
-    lines.push("📍 *ADRESSE DE LIVRAISON*");
+
+    /* Livraison */
+    lines.push("*Livraison*");
     lines.push(numRue);
     lines.push(`${codePostal} ${ville}`.trim());
-    if (complement.trim()) {
-      lines.push(`_${complement.trim()}_`);
-    }
+    if (complement.trim()) lines.push(`_${complement.trim()}_`);
     if (zoneInfo && geocoded) {
-      lines.push(`_Zone ${zoneInfo.zone} · ${zoneInfo.distanceKm.toFixed(1)} km de ${DEPART_LABEL}_`);
+      lines.push(`_Zone ${zoneInfo.zone} · ${zoneInfo.distanceKm.toFixed(1)} km_`);
     }
-    lines.push("");
-    lines.push(sub);
     lines.push("");
 
-    /* Paiement (toujours pré-payé désormais — carte via SumUp, mobile via app) */
+    /* Articles */
+    lines.push("*Détails*");
+    items.forEach(i => {
+      lines.push(`• ${i.quantity}× ${i.name} — ${formatPrice(i.price * i.quantity)}`);
+    });
+    if (deliveryFee > 0) {
+      lines.push(`• Livraison (Zone ${zoneInfo?.zone}) — ${formatPrice(deliveryFee)}`);
+    }
+    lines.push("");
+
+    /* Total */
+    lines.push(`*Total : ${grandT}*`);
     if (paid) {
-      lines.push(`💳 Payé via *${labels[method]}*  ·  ${grandT}`);
-      lines.push("");
-      lines.push("_Merci de préparer la commande._");
+      lines.push(`_Payé par ${labels[method]}_`);
     } else {
-      lines.push(`💳 *Paiement en attente : ${labels[method]}*`);
+      lines.push(`_Paiement en attente : ${labels[method]}_`);
+    }
+    lines.push("");
+
+    /* Closing + suivi */
+    if (paid) {
+      lines.push("Merci de préparer la commande dès réception 🙏");
+    } else {
       lines.push("_Le client n'a pas encore confirmé le paiement._");
     }
-
-    lines.push("");
-    lines.push(sep);
     if (ref) {
-      const trackUrl = `https://chezmamanjolie.com/commande/${ref.id}`;
       lines.push("");
-      lines.push(`🔗 Suivi client : ${trackUrl}`);
+      lines.push(`Suivi : https://chezmamanjolie.com/commande/${ref.id}`);
     }
 
     return encodeURIComponent(lines.join("\n"));
