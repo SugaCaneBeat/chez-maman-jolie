@@ -35,6 +35,50 @@ export async function getOrders(filters?: { status?: string; limit?: number }) {
   return { success: true, data: data || [] };
 }
 
+export async function deleteOrder(orderId: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = createServerClient();
+  /* Cascade : order_items est supprimé via ON DELETE CASCADE en DB */
+  const { error } = await supabase.from("orders").delete().eq("id", orderId);
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+export async function bulkDeleteOrders(orderIds: string[]): Promise<{
+  success: boolean;
+  deletedCount: number;
+  error?: string;
+}> {
+  if (!orderIds.length) return { success: true, deletedCount: 0 };
+  const supabase = createServerClient();
+  const { error, count } = await supabase
+    .from("orders")
+    .delete({ count: "exact" })
+    .in("id", orderIds);
+  if (error) return { success: false, deletedCount: 0, error: error.message };
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin");
+  return { success: true, deletedCount: count ?? orderIds.length };
+}
+
+export async function bulkUpdateOrdersStatus(
+  orderIds: string[],
+  status: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!orderIds.length) return { success: true };
+  const supabase = createServerClient();
+  const patch: Record<string, unknown> = { status };
+  if (status === "delivered" || status === "cancelled") {
+    patch.estimated_delivery_at = null;
+  }
+  const { error } = await supabase.from("orders").update(patch).in("id", orderIds);
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin");
+  return { success: true };
+}
+
 export async function updateOrderStatus(
   orderId: string,
   status: string,

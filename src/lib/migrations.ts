@@ -57,6 +57,23 @@ const MIGRATIONS: Array<{ label: string; sql: string }> = [
     label: "orders.estimated_delivery_at (ETA livraison)",
     sql: "ALTER TABLE orders ADD COLUMN IF NOT EXISTS estimated_delivery_at TIMESTAMPTZ;",
   },
+  {
+    /* Permet la suppression d'une commande de supprimer aussi ses items */
+    label: "order_items.order_id ON DELETE CASCADE",
+    sql: `DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'order_items_order_id_fkey'
+      AND pg_get_constraintdef(oid) LIKE '%ON DELETE CASCADE%'
+  ) THEN
+    ALTER TABLE order_items DROP CONSTRAINT IF EXISTS order_items_order_id_fkey;
+    ALTER TABLE order_items ADD CONSTRAINT order_items_order_id_fkey
+      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE;
+  END IF;
+END
+$$;`,
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────

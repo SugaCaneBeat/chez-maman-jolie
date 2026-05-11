@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { updateOrderStatus, getActiveOrders } from "@/lib/actions/admin-orders";
+import {
+  updateOrderStatus,
+  getActiveOrders,
+  bulkDeleteOrders,
+  bulkUpdateOrdersStatus,
+} from "@/lib/actions/admin-orders";
 import { useToast } from "../components/Toast";
 
 const STATUS_META: Record<string, { label: string; tone: string; emoji: string }> = {
@@ -85,6 +90,7 @@ export default function OrdersTable({
   const [filter, setFilter] = useState(initialFilter ?? "all");
   const [search, setSearch] = useState("");
   const [detail, setDetail] = useState<Order | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [, startTransition] = useTransition();
   const toast = useToast();
   const lastCountRef = useRef(initialOrders.length);
@@ -170,6 +176,58 @@ export default function OrdersTable({
     handleStatusChange(orderId, "cancelled", false);
   };
 
+  /* ── Bulk selection ── */
+  const toggleSelect = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
+  };
+  const selectAll = () => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((o) => o.id)));
+    }
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    const n = ids.length;
+    if (!confirm(`Supprimer définitivement ${n} commande${n > 1 ? "s" : ""} ?\n\nLes articles associés seront aussi supprimés. Cette action est irréversible.`)) return;
+    /* optimistic */
+    setOrders((prev) => prev.filter((o) => !selectedIds.has(o.id)));
+    clearSelection();
+    startTransition(async () => {
+      const res = await bulkDeleteOrders(ids);
+      if (res.success) {
+        toast.success(`${res.deletedCount} commande${res.deletedCount > 1 ? "s" : ""} supprimée${res.deletedCount > 1 ? "s" : ""}`);
+      } else {
+        toast.error("Erreur", res.error ?? "Suppression échouée");
+      }
+    });
+  };
+
+  const handleBulkStatus = async (status: string) => {
+    const ids = Array.from(selectedIds);
+    const n = ids.length;
+    if (status === "cancelled") {
+      if (!confirm(`Annuler ${n} commande${n > 1 ? "s" : ""} ?`)) return;
+    }
+    /* optimistic */
+    setOrders((prev) => prev.map((o) => selectedIds.has(o.id) ? { ...o, status } : o));
+    clearSelection();
+    startTransition(async () => {
+      const res = await bulkUpdateOrdersStatus(ids, status);
+      if (res.success) {
+        toast.success(`${n} commande${n > 1 ? "s" : ""} mise${n > 1 ? "s" : ""} à jour`, STATUS_META[status]?.label ?? status);
+      } else {
+        toast.error("Erreur", res.error ?? "Échec");
+      }
+    });
+  };
+
   return (
     <>
       {/* Audio invisible pour notif nouvelle commande */}
@@ -224,6 +282,46 @@ export default function OrdersTable({
         </div>
       </div>
 
+      {/* Bulk actions bar */}
+      {selectedIds.size > 0 && (
+        <div className="sticky top-0 z-20 mb-3 flex items-center gap-2 bg-[#C9922A] text-[#111008] rounded-[5px] px-4 py-2.5 shadow-md flex-wrap">
+          <span className="text-xs font-bold">
+            {selectedIds.size} commande{selectedIds.size > 1 ? "s" : ""} sélectionnée{selectedIds.size > 1 ? "s" : ""}
+          </span>
+          <button
+            onClick={selectAll}
+            className="text-[10px] underline underline-offset-2 hover:no-underline"
+          >
+            {selectedIds.size === filtered.length ? "Tout désélectionner" : "Tout sélectionner"}
+          </button>
+          <div className="flex-1" />
+          <button
+            onClick={() => handleBulkStatus("delivered")}
+            className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-[5px]"
+          >
+            Marquer livrées
+          </button>
+          <button
+            onClick={() => handleBulkStatus("cancelled")}
+            className="px-3 py-1.5 bg-gray-700 hover:bg-gray-800 text-white text-[10px] font-bold uppercase tracking-wider rounded-[5px]"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={handleBulkDelete}
+            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold uppercase tracking-wider rounded-[5px]"
+          >
+            Supprimer
+          </button>
+          <button
+            onClick={clearSelection}
+            className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider hover:bg-black/10 rounded-[5px]"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Liste commandes */}
       {filtered.length === 0 ? (
         <div className="bg-white rounded-[5px] border border-gray-100 py-12 text-center">
@@ -239,12 +337,28 @@ export default function OrdersTable({
             const isToday = new Date(o.created_at).toDateString() === new Date().toDateString();
             const next = NEXT_STATUS[o.status];
 
+            const isSel = selectedIds.has(o.id);
             return (
               <div
                 key={o.id}
-                className="bg-white rounded-[5px] border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all overflow-hidden"
+                className={`bg-white rounded-[5px] border transition-all overflow-hidden ${
+                  isSel
+                    ? "border-[#C9922A] ring-2 ring-[#C9922A]/20 shadow-md"
+                    : "border-gray-100 hover:border-gray-200 hover:shadow-sm"
+                }`}
               >
                 <div className="p-4 flex items-center gap-3 flex-wrap">
+                  {/* Checkbox de sélection */}
+                  <label className="flex-shrink-0 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isSel}
+                      onChange={(e) => { e.stopPropagation(); toggleSelect(o.id); }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-4 h-4 accent-[#C9922A] cursor-pointer"
+                    />
+                  </label>
+
                   {/* Numéro + horaire */}
                   <div className="flex-shrink-0">
                     <p className="text-xl font-bold text-gray-900 leading-none">#{o.order_number}</p>
@@ -310,6 +424,17 @@ export default function OrdersTable({
           onClose={() => setDetail(null)}
           onStatusChange={(s) => handleStatusChange(detail.id, s)}
           onCancel={() => handleCancel(detail.id, detail.order_number)}
+          onDelete={async () => {
+            if (!confirm(`Supprimer définitivement la commande #${detail.order_number} ?\n\nLes articles associés seront aussi supprimés. Cette action est irréversible.`)) return;
+            setOrders((prev) => prev.filter((o) => o.id !== detail.id));
+            setDetail(null);
+            startTransition(async () => {
+              const { deleteOrder } = await import("@/lib/actions/admin-orders");
+              const res = await deleteOrder(detail.id);
+              if (res.success) toast.success("Commande supprimée", `#${detail.order_number}`);
+              else toast.error("Erreur", res.error ?? "Suppression échouée");
+            });
+          }}
         />
       )}
     </>
@@ -324,11 +449,13 @@ function OrderDetailModal({
   onClose,
   onStatusChange,
   onCancel,
+  onDelete,
 }: {
   order: Order;
   onClose: () => void;
   onStatusChange: (status: string) => void;
   onCancel: () => void;
+  onDelete: () => void;
 }) {
   const meta = STATUS_META[order.status] ?? { label: order.status, tone: "bg-gray-100 text-gray-600", emoji: "•" };
   const next = NEXT_STATUS[order.status];
@@ -504,6 +631,19 @@ function OrderDetailModal({
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                 Suivi client
               </a>
+            </div>
+
+            {/* Suppression définitive — bouton séparé en bas, visuellement risqué */}
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <button
+                onClick={onDelete}
+                className="text-[10px] text-red-500 hover:text-red-700 font-bold uppercase tracking-wider underline underline-offset-2"
+              >
+                Supprimer définitivement
+              </button>
+              <p className="text-[10px] text-gray-400 mt-1">
+                Supprime la commande et tous ses articles de la base. Irréversible.
+              </p>
             </div>
           </section>
         </div>
