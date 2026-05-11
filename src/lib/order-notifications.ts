@@ -54,9 +54,14 @@ export function buildOrderWhatsAppNotification(order: PublicOrder): string {
   if (order.customer_phone) lines.push(fmtPhone(order.customer_phone));
   lines.push("");
 
-  /* Livraison */
+  /* Livraison + lien Google Maps */
   lines.push("*Livraison*");
-  (order.customer_address ?? "_à préciser_").split("\n").forEach((l) => lines.push(l));
+  const addrRaw = order.customer_address ?? "_à préciser_";
+  addrRaw.split("\n").forEach((l) => lines.push(l));
+  if (order.customer_address) {
+    const mapsQuery = encodeURIComponent(addrRaw.replace(/\n/g, ", "));
+    lines.push(`🗺️ Itinéraire : https://www.google.com/maps/search/?api=1&query=${mapsQuery}`);
+  }
   lines.push("");
 
   /* Articles */
@@ -67,6 +72,9 @@ export function buildOrderWhatsAppNotification(order: PublicOrder): string {
     order.items.forEach((i) => {
       lines.push(`• ${i.quantity}× ${i.name} — ${fmtPrice(i.price * i.quantity)}`);
     });
+  }
+  if (order.tip > 0) {
+    lines.push(`• Pourboire livreur — ${fmtPrice(order.tip)}`);
   }
   lines.push("");
 

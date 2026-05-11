@@ -41,8 +41,17 @@ export default function OrdersTable({ initialOrders }: { initialOrders: Order[] 
   const filteredOrders = filter === "all" ? orders : orders.filter(o => o.status === filter);
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
+    /* Si on passe en "delivering", demander l'ETA pour donner un délai au client */
+    let etaMinutes: number | undefined;
+    if (newStatus === "delivering") {
+      const raw = window.prompt("Délai estimé de livraison (en minutes) ?", "20");
+      if (raw === null) return; /* annulé */
+      const n = parseInt(raw, 10);
+      if (!Number.isFinite(n) || n <= 0) return;
+      etaMinutes = n;
+    }
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-    await updateOrderStatus(orderId, newStatus);
+    await updateOrderStatus(orderId, newStatus, etaMinutes);
   };
 
   const formatPrice = (p: number) => (p % 1 === 0 ? `${p} €` : `${p.toFixed(2).replace(".", ",")} €`);

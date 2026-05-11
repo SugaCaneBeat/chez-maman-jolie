@@ -22,12 +22,22 @@ export async function getOrders(filters?: { status?: string; limit?: number }) {
   return { success: true, data: data || [] };
 }
 
-export async function updateOrderStatus(orderId: string, status: string) {
+export async function updateOrderStatus(
+  orderId: string,
+  status: string,
+  etaMinutes?: number
+) {
   const supabase = createServerClient();
-  const { error } = await supabase
-    .from("orders")
-    .update({ status })
-    .eq("id", orderId);
+  const patch: Record<string, unknown> = { status };
+  /* Si on passe en livraison et qu'on a un ETA en minutes, on calcule la date */
+  if (status === "delivering" && typeof etaMinutes === "number" && etaMinutes > 0) {
+    patch.estimated_delivery_at = new Date(Date.now() + etaMinutes * 60_000).toISOString();
+  }
+  /* Si on passe en livrée, on efface l'ETA */
+  if (status === "delivered" || status === "cancelled") {
+    patch.estimated_delivery_at = null;
+  }
+  const { error } = await supabase.from("orders").update(patch).eq("id", orderId);
   if (error) return { success: false, error: error.message };
   revalidatePath("/admin/orders");
   revalidatePath("/admin");

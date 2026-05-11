@@ -202,6 +202,25 @@ export default function OrderStatusView({
             </p>
           </div>
           <p className="text-white/50 text-sm">{cancelled ? "Contactez-nous sur WhatsApp" : currentStage.hint}</p>
+
+          {/* ETA quand en livraison */}
+          {!cancelled && order.status === "delivering" && order.estimated_delivery_at && (() => {
+            const eta = new Date(order.estimated_delivery_at);
+            const now = new Date();
+            const diffMin = Math.max(0, Math.round((eta.getTime() - now.getTime()) / 60000));
+            const timeStr = eta.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+            return (
+              <div className="mt-3 pt-3 border-t border-white/10">
+                <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mb-1">
+                  Arrivée estimée
+                </p>
+                <p className="text-2xl font-bold text-primary">
+                  {diffMin > 0 ? `~ ${diffMin} min` : "Imminente"}
+                </p>
+                <p className="text-[11px] text-white/40">vers {timeStr}</p>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Timeline verticale */}

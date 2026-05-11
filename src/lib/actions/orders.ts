@@ -8,6 +8,7 @@ export interface CreateOrderInput {
   paymentMethod: string;
   paid?: boolean;
   total: number;
+  tip?: number;
   zoneLabel?: string;
   distanceKm?: number;
 }
@@ -38,6 +39,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         customer_address: input.customerAddress || null,
         payment_method: input.paymentMethod,
         total: input.total,
+        tip: input.tip ?? 0,
         status: input.paid ? "paid" : "pending",
       })
       .select()
@@ -69,6 +71,8 @@ export interface PublicOrder {
   order_number: number;
   status: string;
   total: number;
+  tip: number;
+  estimated_delivery_at: string | null;
   payment_method: string | null;
   customer_name: string | null;
   customer_phone: string | null;
@@ -88,7 +92,7 @@ export async function getPublicOrder(id: string): Promise<PublicOrder | null> {
 
     const { data, error } = await supabase
       .from("orders")
-      .select("id, order_number, status, total, payment_method, customer_name, customer_phone, customer_address, created_at, order_items(name, price, quantity, image)")
+      .select("id, order_number, status, total, tip, estimated_delivery_at, payment_method, customer_name, customer_phone, customer_address, created_at, order_items(name, price, quantity, image)")
       .eq("id", id)
       .single();
 
@@ -99,6 +103,8 @@ export async function getPublicOrder(id: string): Promise<PublicOrder | null> {
       order_number: data.order_number,
       status: data.status,
       total: Number(data.total),
+      tip: Number(data.tip ?? 0),
+      estimated_delivery_at: data.estimated_delivery_at ?? null,
       payment_method: data.payment_method,
       customer_name: data.customer_name,
       customer_phone: data.customer_phone,

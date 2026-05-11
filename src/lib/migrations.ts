@@ -49,6 +49,14 @@ const MIGRATIONS: Array<{ label: string; sql: string }> = [
           ALTER TABLE orders ADD CONSTRAINT orders_status_check
             CHECK (status IN ('pending','paid','confirmed','preparing','ready','delivering','delivered','cancelled'));`,
   },
+  {
+    label: "orders.tip (pourboire)",
+    sql: "ALTER TABLE orders ADD COLUMN IF NOT EXISTS tip NUMERIC(10,2) DEFAULT 0;",
+  },
+  {
+    label: "orders.estimated_delivery_at (ETA livraison)",
+    sql: "ALTER TABLE orders ADD COLUMN IF NOT EXISTS estimated_delivery_at TIMESTAMPTZ;",
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────

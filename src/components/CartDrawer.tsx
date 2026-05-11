@@ -44,6 +44,7 @@ export default function CartDrawer() {
   const [codePostal, setCodePostal] = useState("");
   const [ville, setVille]           = useState("");
   const [complement, setComplement] = useState("");
+  const [tip, setTip]               = useState(0);
 
   const [copied, setCopied]       = useState<string | null>(null);
   const [saving, setSaving]       = useState(false);
@@ -76,7 +77,7 @@ export default function CartDrawer() {
   /* ── Validation ── */
   const subtotal       = getTotal();
   const deliveryFee    = zoneInfo && !zoneInfo.outOfRange ? zoneInfo.fee : 0;
-  const grandTotal     = subtotal + deliveryFee;
+  const grandTotal     = subtotal + deliveryFee + tip;
   const minOrderValid  = subtotal >= MIN_ORDER;
   const prenomValid    = prenom.trim().length >= 2;
   const nomValid       = nom.trim().length >= 2;
@@ -139,6 +140,7 @@ export default function CartDrawer() {
       setStep("form");
       setShowErrors(false);
       setOrderRef(null);
+      setTip(0);
     }, 400);
   };
 
@@ -180,7 +182,7 @@ export default function CartDrawer() {
     lines.push(fmtPhone(tel));
     lines.push("");
 
-    /* Livraison */
+    /* Livraison + lien Google Maps */
     lines.push("*Livraison*");
     lines.push(numRue);
     lines.push(`${codePostal} ${ville}`.trim());
@@ -188,6 +190,8 @@ export default function CartDrawer() {
     if (zoneInfo && geocoded) {
       lines.push(`_Zone ${zoneInfo.zone} · ${zoneInfo.distanceKm.toFixed(1)} km_`);
     }
+    const mapsQ = encodeURIComponent(`${numRue}, ${codePostal} ${ville}`.trim());
+    lines.push(`🗺️ Itinéraire : https://www.google.com/maps/search/?api=1&query=${mapsQ}`);
     lines.push("");
 
     /* Articles */
@@ -197,6 +201,9 @@ export default function CartDrawer() {
     });
     if (deliveryFee > 0) {
       lines.push(`• Livraison (Zone ${zoneInfo?.zone}) — ${formatPrice(deliveryFee)}`);
+    }
+    if (tip > 0) {
+      lines.push(`• Pourboire livreur — ${formatPrice(tip)}`);
     }
     lines.push("");
 
@@ -276,6 +283,7 @@ export default function CartDrawer() {
         paymentMethod: "carte",
         paid: false,
         total: grandTotal,
+        tip,
       });
       if (!orderRes.success || !orderRes.orderId || !orderRes.orderNumber) {
         setSaving(false);
@@ -324,6 +332,7 @@ export default function CartDrawer() {
         paymentMethod: payMethod,
         paid,
         total: grandTotal,
+        tip,
       });
       if (res.success && res.orderId && res.orderNumber) {
         ref = { id: res.orderId, number: res.orderNumber };
@@ -491,6 +500,40 @@ export default function CartDrawer() {
                   </div>
                 );
               })()}
+
+              {/* ── Pourboire optionnel ── */}
+              <div className="glass rounded-[5px] p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-[10px] text-white/40 uppercase tracking-widest font-bold">
+                    Pourboire pour le livreur
+                  </h4>
+                  <span className="text-[9px] text-white/30 normal-case">optionnel</span>
+                </div>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[0, 1, 2, 3].map((amount) => {
+                    const active = tip === amount;
+                    return (
+                      <button
+                        key={amount}
+                        type="button"
+                        onClick={() => setTip(amount)}
+                        className={`py-2 rounded-[5px] text-xs font-bold transition-all border ${
+                          active
+                            ? "bg-primary/15 text-primary border-primary/40 scale-[1.02]"
+                            : "bg-white/5 text-white/50 border-white/5 hover:bg-white/8"
+                        }`}
+                      >
+                        {amount === 0 ? "Aucun" : `${amount} €`}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-white/30 mt-2 leading-snug">
+                  {tip === 0
+                    ? "Vous pouvez aussi donner un pourboire en main propre au livreur."
+                    : `Merci ! ${tip} € seront ajoutés au total et reversés au livreur.`}
+                </p>
+              </div>
 
               {/* ── Customer info ── */}
               <div className="glass rounded-[5px] p-4 space-y-3">
@@ -741,9 +784,9 @@ export default function CartDrawer() {
         {/* ── Footer / CTA ── */}
         {items.length > 0 && (
           <div className="px-6 py-5 border-t border-white/5 space-y-3">
-            {/* Total avec livraison */}
+            {/* Total avec livraison + pourboire */}
             <div className="space-y-0.5">
-              {deliveryFee > 0 && zoneInfo?.zone && (
+              {(deliveryFee > 0 || tip > 0) && (
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-white/40">Sous-total</span>
                   <span className="text-white/60">{formatPrice(subtotal)}</span>
@@ -755,6 +798,12 @@ export default function CartDrawer() {
                   <span className={deliveryFee === 0 ? "text-emerald-400" : "text-white/60"}>
                     {deliveryFee === 0 ? "Gratuite" : formatPrice(deliveryFee)}
                   </span>
+                </div>
+              )}
+              {tip > 0 && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-white/40">Pourboire</span>
+                  <span className="text-white/60">{formatPrice(tip)}</span>
                 </div>
               )}
               <div className="flex items-center justify-between pt-1">
