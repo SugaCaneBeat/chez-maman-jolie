@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPublicOrder } from "@/lib/actions/orders";
+import { verifyAndSyncSumUpPayment } from "@/lib/actions/sumup-checkout";
 import OrderStatusView from "./OrderStatusView";
 
 export const dynamic = "force-dynamic";
@@ -8,10 +9,20 @@ export const revalidate = 0;
 
 export default async function OrderTrackingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ source?: string }>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
+
+  /* Retour SumUp : vérifie le checkout et passe la commande en "paid" si besoin */
+  const justPaid = sp.source === "sumup";
+  if (justPaid) {
+    await verifyAndSyncSumUpPayment(id);
+  }
+
   const order = await getPublicOrder(id);
 
   if (!order) {
@@ -26,7 +37,7 @@ export default async function OrderTrackingPage({
     );
   }
 
-  return <OrderStatusView initialOrder={order} />;
+  return <OrderStatusView initialOrder={order} justPaid={justPaid} />;
 }
 
 export async function generateMetadata({

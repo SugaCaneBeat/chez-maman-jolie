@@ -22,6 +22,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
             Commandes
           </Link>
+          <Link href="/admin/media" className="flex items-center gap-3 px-4 py-2.5 rounded-[5px] text-sm text-white/70 hover:text-white hover:bg-white/5 transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            Médiathèque
+          </Link>
           <Link href="/admin/users" className="flex items-center gap-3 px-4 py-2.5 rounded-[5px] text-sm text-white/70 hover:text-white hover:bg-white/5 transition-colors">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
             Admins
@@ -41,6 +45,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/admin" className="text-white/60 text-xs">Dashboard</Link>
           <Link href="/admin/menu" className="text-white/60 text-xs">Menu</Link>
           <Link href="/admin/orders" className="text-white/60 text-xs">Commandes</Link>
+          <Link href="/admin/media" className="text-white/60 text-xs">Médias</Link>
           <Link href="/admin/users" className="text-white/60 text-xs">Admins</Link>
         </div>
       </div>

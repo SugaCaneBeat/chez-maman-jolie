@@ -12,7 +12,7 @@ import {
   toggleBoissonItemAvailable,
   type BoissonSubcategoryAdmin,
 } from "@/lib/actions/boissons";
-import { uploadMenuImage } from "@/lib/actions/menu";
+import ImagePicker from "../components/ImagePicker";
 
 interface Props {
   categoryId: string;
@@ -38,9 +38,6 @@ export default function BoissonsEditor({ categoryId, categoryName }: Props) {
   const [editingItem, setEditingItem] = useState<{
     subId: string; itemId: string | null; name: string; price: string;
   } | null>(null);
-
-  /* upload state */
-  const [uploadingFor, setUploadingFor] = useState<string | null>(null);
 
   const reload = async () => {
     const data = await listBoissonSubcategories(categoryId);
@@ -86,19 +83,9 @@ export default function BoissonsEditor({ categoryId, categoryName }: Props) {
     });
   };
 
-  const handleUploadSubImage = async (subId: string, file: File) => {
-    setUploadingFor(subId);
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      const res = await uploadMenuImage(form);
-      if (res.success && res.url) {
-        await updateBoissonSubcategory(subId, { image: res.url });
-        await reload();
-      }
-    } finally {
-      setUploadingFor(null);
-    }
+  const handlePickSubImage = async (subId: string, url: string) => {
+    await updateBoissonSubcategory(subId, { image: url || null });
+    await reload();
   };
 
   /* ── Item actions ── */
@@ -201,26 +188,15 @@ export default function BoissonsEditor({ categoryId, categoryName }: Props) {
           <div key={sub.id} className="bg-white rounded-[5px] border border-gray-100 overflow-hidden shadow-sm">
             {/* Sub header */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50/50">
-              {/* Image */}
-              <label className="w-12 h-12 flex-shrink-0 rounded-[5px] overflow-hidden bg-gray-100 border border-gray-200 cursor-pointer group relative block">
-                {sub.image ? (
-                  <img src={sub.image} alt={sub.name} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">📷</div>
-                )}
-                <span className={`absolute inset-0 bg-black/60 flex items-center justify-center text-white text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity ${uploadingFor === sub.id ? "opacity-100" : ""}`}>
-                  {uploadingFor === sub.id ? "…" : "MODIFIER"}
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={e => {
-                    const f = e.target.files?.[0];
-                    if (f) handleUploadSubImage(sub.id, f);
-                  }}
+              {/* Image — galerie ou upload via ImagePicker */}
+              <div className="flex-shrink-0">
+                <ImagePicker
+                  value={sub.image ?? ""}
+                  onChange={(url) => handlePickSubImage(sub.id, url)}
+                  label={sub.name}
+                  previewClassName="w-12 h-12"
                 />
-              </label>
+              </div>
 
               {/* Name */}
               <div className="flex-1 min-w-0">

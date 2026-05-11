@@ -32,6 +32,14 @@ const MIGRATIONS: Array<{ label: string; sql: string }> = [
   display_order INTEGER DEFAULT 0
 );`,
   },
+  {
+    label: "orders.sumup_checkout_id",
+    sql: "ALTER TABLE orders ADD COLUMN IF NOT EXISTS sumup_checkout_id TEXT;",
+  },
+  {
+    label: "orders.sumup_reference",
+    sql: "ALTER TABLE orders ADD COLUMN IF NOT EXISTS sumup_reference TEXT;",
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────

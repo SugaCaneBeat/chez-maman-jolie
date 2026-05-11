@@ -30,19 +30,36 @@ function formatDate(iso: string) {
   });
 }
 
-export default function OrderStatusView({ initialOrder }: { initialOrder: PublicOrder }) {
+export default function OrderStatusView({
+  initialOrder,
+  justPaid = false,
+}: {
+  initialOrder: PublicOrder;
+  justPaid?: boolean;
+}) {
   const [order, setOrder] = useState(initialOrder);
+  /* Si on revient de SumUp et que la commande n'est pas encore "paid"
+     côté DB, on poll plus vite pendant 10 secondes. */
+  const [polledQuick, setPolledQuick] = useState(false);
 
-  /* ── Polling toutes les 20 secondes ── */
+  /* ── Polling toutes les 20 secondes (rapide après retour SumUp) ── */
   useEffect(() => {
     if (order.status === "delivered" || order.status === "cancelled") return;
+    const quick = justPaid && order.status === "pending" && !polledQuick;
+    const interval = quick ? 2000 : 20000;
     const tick = async () => {
       const fresh = await getPublicOrder(order.id);
-      if (fresh) setOrder(fresh);
+      if (fresh) {
+        setOrder(fresh);
+        if (quick && fresh.status === "paid") setPolledQuick(true);
+      }
     };
-    const id = setInterval(tick, 20000);
-    return () => clearInterval(id);
-  }, [order.id, order.status]);
+    const id = setInterval(tick, interval);
+    /* Stop fast polling after 10s even if status didn't change */
+    let stopFast: ReturnType<typeof setTimeout> | null = null;
+    if (quick) stopFast = setTimeout(() => setPolledQuick(true), 10000);
+    return () => { clearInterval(id); if (stopFast) clearTimeout(stopFast); };
+  }, [order.id, order.status, justPaid, polledQuick]);
 
   const cancelled = order.status === "cancelled";
   /* "paid" et "pending" sont des statuts de départ — on map vers "paid" dans la timeline */
@@ -63,6 +80,38 @@ export default function OrderStatusView({ initialOrder }: { initialOrder: Public
       </header>
 
       <main className="max-w-xl mx-auto px-5 py-8 space-y-6">
+        {/* Bandeau de retour SumUp */}
+        {justPaid && (
+          <div className={`rounded-[5px] p-4 border flex items-start gap-3 ${
+            order.status === "paid" || order.status === "confirmed" || order.status === "preparing"
+              ? "bg-emerald-500/10 border-emerald-500/30"
+              : "bg-amber-500/10 border-amber-500/30"
+          }`}>
+            <svg className={`w-5 h-5 flex-shrink-0 ${
+              order.status === "paid" || order.status === "confirmed" || order.status === "preparing"
+                ? "text-emerald-400"
+                : "text-amber-400"
+            }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {order.status === "pending"
+                ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
+              }
+            </svg>
+            <div>
+              <p className="text-white font-semibold text-sm">
+                {order.status === "pending"
+                  ? "Confirmation du paiement en cours…"
+                  : "Paiement confirmé"}
+              </p>
+              <p className="text-white/60 text-xs mt-0.5">
+                {order.status === "pending"
+                  ? "SumUp valide votre transaction. Cette page se met à jour automatiquement."
+                  : "Votre commande a été transmise au restaurant. Merci !"}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Hero */}
         <div className="text-center">
           <p className="text-white/40 text-xs uppercase tracking-widest mb-2">Commande</p>

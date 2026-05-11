@@ -12,6 +12,7 @@ import {
   type PickerItem,
 } from "@/lib/actions/formules";
 import { uploadMenuImage } from "@/lib/actions/menu";
+import ImagePicker from "../components/ImagePicker";
 
 interface Props {
   categoryId: string;
@@ -291,10 +292,6 @@ export default function FormuleEditor({ categoryId, categoryName }: Props) {
 
   /* ── Edit form ── */
   if (editingFormule !== null) {
-    const currentImageUrl = form.image || (
-      editingFormule !== "new" ? (editingFormule.image || "") : ""
-    );
-
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
@@ -381,14 +378,13 @@ export default function FormuleEditor({ categoryId, categoryName }: Props) {
           <div>
             <p className="text-xs font-semibold text-gray-500 mb-2">Image</p>
             <div className="flex items-start gap-4">
-              {/* Preview */}
-              <div className="w-20 h-20 flex-shrink-0 rounded-[5px] overflow-hidden border border-gray-200 bg-gray-100">
-                {currentImageUrl ? (
-                  <img src={currentImageUrl} alt="aperçu" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">—</div>
-                )}
-              </div>
+              {/* Picker (galerie + upload) */}
+              <ImagePicker
+                value={form.image}
+                onChange={(url) => setForm(prev => ({ ...prev, image: url }))}
+                label={form.name || "formule"}
+                previewClassName="w-20 h-20"
+              />
 
               <div className="flex flex-col gap-2">
                 <button
@@ -405,11 +401,13 @@ export default function FormuleEditor({ categoryId, categoryName }: Props) {
                       Génération…
                     </>
                   ) : (
-                    <>&#127912; Générer l&apos;image</>
+                    <>&#127912; Générer un collage</>
                   )}
                 </button>
                 <p className="text-[10px] text-gray-400 leading-tight">
-                  Crée un collage à partir<br />des images des composants.
+                  Click sur l&apos;image : galerie ou upload.<br/>
+                  Ou : générer un collage auto à partir<br/>
+                  des images des composants.
                 </p>
               </div>
             </div>

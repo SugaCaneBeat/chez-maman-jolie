@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useCart } from "@/context/CartContext";
 import { createOrder } from "@/lib/actions/orders";
+import { createSumUpCheckoutForOrder } from "@/lib/actions/sumup-checkout";
 import { resolveZone, type ZoneInfo, type GeocodedAddress, DEPART_LABEL } from "@/lib/geo";
 import Image from "next/image";
 
@@ -16,10 +17,10 @@ const MIN_ORDER = 25;
 type PayMethod = "carte" | "lydia" | "paylib" | "wero";
 
 const PAY_OPTIONS: { id: PayMethod; label: string; sub: string; color: string; textColor: string }[] = [
-  { id: "carte",  label: "Carte",  sub: "À la livraison", color: "bg-indigo-500/15", textColor: "text-indigo-400" },
-  { id: "lydia",  label: "Lydia",  sub: "Mobile",         color: "bg-purple-500/15", textColor: "text-purple-400" },
-  { id: "paylib", label: "PayLib", sub: "Mobile",         color: "bg-sky-500/15",    textColor: "text-sky-400"    },
-  { id: "wero",   label: "Wero",   sub: "Mobile",         color: "bg-teal-500/15",   textColor: "text-teal-400"   },
+  { id: "carte",  label: "Carte",  sub: "En ligne · SumUp", color: "bg-indigo-500/15", textColor: "text-indigo-400" },
+  { id: "lydia",  label: "Lydia",  sub: "Mobile",            color: "bg-purple-500/15", textColor: "text-purple-400" },
+  { id: "paylib", label: "PayLib", sub: "Mobile",            color: "bg-sky-500/15",    textColor: "text-sky-400"    },
+  { id: "wero",   label: "Wero",   sub: "Mobile",            color: "bg-teal-500/15",   textColor: "text-teal-400"   },
 ];
 
 /* ─── Deep-links / URLs des apps de paiement mobile ─── */
@@ -194,6 +195,7 @@ export default function CartDrawer() {
   };
 
   const isMobilePay = payMethod === "lydia" || payMethod === "paylib" || payMethod === "wero";
+  const isCardOnline = payMethod === "carte";
 
   const handleOrder = async () => {
     /* Validate required fields */
@@ -214,14 +216,65 @@ export default function CartDrawer() {
       return;
     }
 
+    /* Carte → SumUp online checkout */
+    if (isCardOnline) {
+      await doCardCheckout();
+      return;
+    }
+
     /* Mobile payment (Lydia/PayLib/Wero): show payment interstitial first */
     if (isMobilePay) {
       setStep("payment");
       return;
     }
 
-    /* Espèces ou Carte → envoi direct */
+    /* Fallback */
     await doSendOrder(false);
+  };
+
+  /* ── Carte bancaire en ligne via SumUp ─── */
+  const doCardCheckout = async () => {
+    if (!payMethod) return;
+    setSaving(true);
+    try {
+      /* 1) Créer la commande en "pending" */
+      const orderRes = await createOrder({
+        items: items.map(i => ({ name: i.name, price: i.price, quantity: i.quantity, image: i.image })),
+        customerName: nom,
+        customerPhone: tel,
+        customerAddress: address,
+        paymentMethod: "carte",
+        paid: false,
+        total: grandTotal,
+      });
+      if (!orderRes.success || !orderRes.orderId || !orderRes.orderNumber) {
+        setSaving(false);
+        alert(orderRes.error ?? "Erreur lors de la création de la commande");
+        return;
+      }
+
+      /* 2) Créer le checkout SumUp et rediriger */
+      const checkoutRes = await createSumUpCheckoutForOrder(
+        orderRes.orderId,
+        orderRes.orderNumber,
+        grandTotal
+      );
+      if (!checkoutRes.success || !checkoutRes.checkoutUrl) {
+        setSaving(false);
+        alert(
+          checkoutRes.error ??
+            "Paiement par carte indisponible pour le moment. Choisissez un autre mode."
+        );
+        return;
+      }
+
+      /* 3) Vider le panier puis redirection vers SumUp */
+      clearCart();
+      window.location.href = checkoutRes.checkoutUrl;
+    } catch (e) {
+      setSaving(false);
+      alert(e instanceof Error ? e.message : "Erreur");
+    }
   };
 
   /* Appelé depuis "Envoyer" (carte) ou "J'ai payé" (Wero etc.) */
@@ -561,7 +614,7 @@ export default function CartDrawer() {
               )}
               {payMethod === "carte" && (
                 <p className="text-[11px] text-white/50 -mt-2 px-1">
-                  → Vous réglerez par carte bancaire au livreur (TPE).
+                  → Vous serez redirigé vers la page de paiement sécurisée SumUp. Retour automatique vers le suivi de commande après paiement.
                 </p>
               )}
             </>
@@ -659,9 +712,7 @@ export default function CartDrawer() {
                   )}
                   <p className="text-white/60 text-xs leading-relaxed">
                     Votre commande a bien été transmise au restaurant.
-                    {payMethod === "carte"
-                      ? ` Vous réglerez ${formatPrice(grandTotal)} au livreur par carte.`
-                      : " Le paiement est confirmé, nous préparons vos plats."}
+                    {" Le paiement est confirmé, nous préparons vos plats."}
                   </p>
                 </div>
 
@@ -716,9 +767,13 @@ export default function CartDrawer() {
                     </svg>
                   )}
                   {saving
-                    ? "Envoi..."
+                    ? (isCardOnline ? "Redirection…" : "Envoi…")
                     : formValid
-                      ? (isMobilePay ? `Payer avec ${appName}` : "Envoyer sur WhatsApp")
+                      ? (isCardOnline
+                          ? `Payer ${formatPrice(grandTotal)} par carte`
+                          : isMobilePay
+                            ? `Payer avec ${appName}`
+                            : "Envoyer sur WhatsApp")
                       : !minOrderValid
                         ? `Minimum ${MIN_ORDER} € pour commander`
                         : !zoneValid && addressValid
