@@ -9,7 +9,6 @@ import {
 import { useToast } from "../components/Toast";
 import ItemForm from "./ItemForm";
 import FormuleEditor from "./FormuleEditor";
-import BoissonsEditor from "./BoissonsEditor";
 import ItemsView from "./ItemsView";
 import CategorySidebar from "./CategorySidebar";
 import QuickAddItem from "./QuickAddItem";
@@ -293,10 +292,7 @@ export default function MenuEditor({ initialCategories, initialItems }: Props) {
         {selectedCategory?.type === "formules" && (
           <FormuleEditor categoryId={selectedCategory.id} categoryName={selectedCategory.name} />
         )}
-        {selectedCategory?.type === "boissons" && (
-          <BoissonsEditor categoryId={selectedCategory.id} categoryName={selectedCategory.name} />
-        )}
-        {(!selectedCategory || selectedCategory.type === "standard") && selectedCategory && (
+        {selectedCategory && selectedCategory.type !== "formules" && (
           <>
             {/* Header catégorie */}
             <div className="px-5 py-4 border-b border-gray-100 bg-white">

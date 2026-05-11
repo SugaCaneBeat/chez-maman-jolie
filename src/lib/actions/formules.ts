@@ -50,6 +50,7 @@ export async function getMenuItemsForPicker(): Promise<{
   const platIds         = platSlugs.map(s => catBySlug[s]).filter(Boolean) as string[];
   const accompIds       = catBySlug["accompagnements"] ? [catBySlug["accompagnements"]] : [];
   const dessertIds      = catBySlug["desserts"]        ? [catBySlug["desserts"]]        : [];
+  const boissonIds      = catBySlug["boissons"]        ? [catBySlug["boissons"]]        : [];
 
   const fetchItems = (ids: string[]) =>
     ids.length
@@ -62,8 +63,7 @@ export async function getMenuItemsForPicker(): Promise<{
     fetchItems(platIds),
     fetchItems(accompIds),
     fetchItems(dessertIds),
-    supabase.from("menu_items").select("id, name, image")
-      .not("boisson_subcategory_id", "is", null).eq("available", true).order("display_order"),
+    fetchItems(boissonIds),
   ]);
 
   const toItem = (r: { id: string; name: string; image?: string | null }): PickerItem => ({

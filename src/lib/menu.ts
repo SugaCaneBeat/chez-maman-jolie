@@ -79,37 +79,30 @@ export async function getMenuData(): Promise<Category[]> {
 
     for (const cat of cats) {
       if (cat.type === "boissons") {
-        // Fetch subcategories + their items
-        const { data: subs } = await supabase
-          .from("boisson_subcategories")
+        /* Les boissons sont désormais des items à part entière (comme les plats)
+         * On les charge à plat depuis menu_items via category_id.
+         * Les anciennes sous-catégories boisson_subcategories sont ignorées
+         * mais préservées en DB pour compatibilité descendante. */
+        const { data: items } = await supabase
+          .from("menu_items")
           .select("*")
           .eq("category_id", cat.id)
+          .eq("available", true)
           .order("display_order");
 
-        const subcats: BoissonSubcategory[] = [];
-        for (const sub of subs || []) {
-          const { data: items } = await supabase
-            .from("menu_items")
-            .select("*")
-            .eq("boisson_subcategory_id", sub.id)
-            .eq("available", true)
-            .order("display_order");
-          subcats.push({
-            name: sub.name,
-            image: sub.image,
-            items: (items || []).map(i => ({
-              id: i.id,
-              name: i.name,
-              price: Number(i.price),
-              image: i.image ?? undefined,
-            })),
-          });
-        }
+        const flatItems: MenuItem[] = (items || []).map((i) => ({
+          id: i.id,
+          name: i.name,
+          price: Number(i.price),
+          image: i.image ?? undefined,
+          accompagnement: i.accompagnement ?? undefined,
+          badge: i.badge ?? undefined,
+        }));
 
         categories.push({
-          id: cat.id, slug: cat.slug, name: cat.name, icon: cat.icon, type: cat.type,
-          items: [],
-          boissonsData: { categories: subcats },
+          id: cat.id, slug: cat.slug, name: cat.name, icon: cat.icon,
+          type: "standard", // ⇐ on coerce pour réutiliser MenuSection côté public
+          items: flatItems,
         });
       } else if (cat.type === "formules") {
         const { data: items } = await supabase
