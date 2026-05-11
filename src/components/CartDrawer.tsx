@@ -102,6 +102,44 @@ export default function CartDrawer() {
   if (!zoneValid && addressValid) missing.push("une adresse dans notre zone");
   if (!paymentValid)     missing.push("le mode de paiement");
 
+  /* ── Body scroll lock quand le drawer est ouvert (iOS Safari fix) ── */
+  useEffect(() => {
+    if (!isDrawerOpen) return;
+    const scrollY = window.scrollY;
+    const prevBody = {
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      top: document.body.style.top,
+      width: document.body.style.width,
+    };
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+    return () => {
+      document.body.style.overflow = prevBody.overflow;
+      document.body.style.position = prevBody.position;
+      document.body.style.top = prevBody.top;
+      document.body.style.width = prevBody.width;
+      window.scrollTo(0, scrollY);
+    };
+  }, [isDrawerOpen]);
+
+  /* ── Scroll vers l'input focus pour qu'il ne soit pas caché par le clavier iOS ── */
+  useEffect(() => {
+    if (!isDrawerOpen) return;
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) {
+        setTimeout(() => {
+          target.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 300); /* attend que le clavier iOS s'affiche */
+      }
+    };
+    document.addEventListener("focusin", handleFocusIn);
+    return () => document.removeEventListener("focusin", handleFocusIn);
+  }, [isDrawerOpen]);
+
   /* ── Géocoder l'adresse (debounced) dès qu'elle change ── */
   useEffect(() => {
     if (!addressValid) {
@@ -358,9 +396,9 @@ export default function CartDrawer() {
         onClick={handleClose}
       />
 
-      {/* Drawer */}
+      {/* Drawer — iOS-friendly: 100dvh (s'adapte au clavier), safe-area en footer, tap-highlight off */}
       <div
-        className={`fixed top-0 right-0 bottom-0 z-[80] w-full max-w-md bg-dark-light border-l border-white/5 shadow-2xl transition-transform duration-500 ease-out flex flex-col ${
+        className={`fixed top-0 right-0 z-[80] w-full max-w-md bg-dark-light border-l border-white/5 shadow-2xl transition-transform duration-500 ease-out flex flex-col h-[100dvh] [-webkit-tap-highlight-color:transparent] ${
           isDrawerOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -517,7 +555,7 @@ export default function CartDrawer() {
                         key={amount}
                         type="button"
                         onClick={() => setTip(amount)}
-                        className={`py-2 rounded-[5px] text-xs font-bold transition-all border ${
+                        className={`py-3 min-h-[44px] rounded-[5px] text-sm font-bold transition-all border ${
                           active
                             ? "bg-primary/15 text-primary border-primary/40 scale-[1.02]"
                             : "bg-white/5 text-white/50 border-white/5 hover:bg-white/8"
@@ -554,7 +592,7 @@ export default function CartDrawer() {
                       value={prenom}
                       onChange={(e) => setPrenom(e.target.value)}
                       placeholder="Jean"
-                      className={`w-full bg-white/5 rounded-[5px] px-3 py-2 text-white text-sm focus:outline-none border placeholder:text-white/20 transition-colors ${
+                      className={`w-full bg-white/5 rounded-[5px] px-3 py-3 text-white text-base focus:outline-none border placeholder:text-white/20 transition-colors ${
                         showErrors && !prenomValid
                           ? "border-red-500/60 bg-red-500/5 focus:border-red-400"
                           : "border-white/5 focus:border-primary/50"
@@ -572,7 +610,7 @@ export default function CartDrawer() {
                       value={nom}
                       onChange={(e) => setNom(e.target.value)}
                       placeholder="Dupont"
-                      className={`w-full bg-white/5 rounded-[5px] px-3 py-2 text-white text-sm focus:outline-none border placeholder:text-white/20 transition-colors ${
+                      className={`w-full bg-white/5 rounded-[5px] px-3 py-3 text-white text-base focus:outline-none border placeholder:text-white/20 transition-colors ${
                         showErrors && !nomValid
                           ? "border-red-500/60 bg-red-500/5 focus:border-red-400"
                           : "border-white/5 focus:border-primary/50"
@@ -594,7 +632,7 @@ export default function CartDrawer() {
                     value={tel}
                     onChange={(e) => setTel(e.target.value)}
                     placeholder="06 12 34 56 78"
-                    className={`w-full bg-white/5 rounded-[5px] px-3 py-2 text-white text-sm focus:outline-none border placeholder:text-white/20 transition-colors ${
+                    className={`w-full bg-white/5 rounded-[5px] px-3 py-3 text-white text-base focus:outline-none border placeholder:text-white/20 transition-colors ${
                       showErrors && !telValid
                         ? "border-red-500/60 bg-red-500/5 focus:border-red-400"
                         : "border-white/5 focus:border-primary/50"
@@ -617,7 +655,7 @@ export default function CartDrawer() {
                     value={numRue}
                     onChange={(e) => setNumRue(e.target.value)}
                     placeholder="15 rue du Temple"
-                    className={`w-full bg-white/5 rounded-[5px] px-3 py-2 text-white text-sm focus:outline-none border placeholder:text-white/20 transition-colors ${
+                    className={`w-full bg-white/5 rounded-[5px] px-3 py-3 text-white text-base focus:outline-none border placeholder:text-white/20 transition-colors ${
                       showErrors && !numRueValid
                         ? "border-red-500/60 bg-red-500/5 focus:border-red-400"
                         : "border-white/5 focus:border-primary/50"
@@ -640,7 +678,7 @@ export default function CartDrawer() {
                       value={codePostal}
                       onChange={(e) => setCodePostal(e.target.value.replace(/\D/g, "").slice(0, 5))}
                       placeholder="75011"
-                      className={`w-full bg-white/5 rounded-[5px] px-3 py-2 text-white text-sm focus:outline-none border placeholder:text-white/20 transition-colors ${
+                      className={`w-full bg-white/5 rounded-[5px] px-3 py-3 text-white text-base focus:outline-none border placeholder:text-white/20 transition-colors ${
                         showErrors && !codePostalValid
                           ? "border-red-500/60 bg-red-500/5 focus:border-red-400"
                           : "border-white/5 focus:border-primary/50"
@@ -658,7 +696,7 @@ export default function CartDrawer() {
                       value={ville}
                       onChange={(e) => setVille(e.target.value)}
                       placeholder="Paris"
-                      className={`w-full bg-white/5 rounded-[5px] px-3 py-2 text-white text-sm focus:outline-none border placeholder:text-white/20 transition-colors ${
+                      className={`w-full bg-white/5 rounded-[5px] px-3 py-3 text-white text-base focus:outline-none border placeholder:text-white/20 transition-colors ${
                         showErrors && !villeValid
                           ? "border-red-500/60 bg-red-500/5 focus:border-red-400"
                           : "border-white/5 focus:border-primary/50"
@@ -677,7 +715,7 @@ export default function CartDrawer() {
                     value={complement}
                     onChange={(e) => setComplement(e.target.value)}
                     placeholder="Code d'accès, étage, escalier…"
-                    className="w-full bg-white/5 rounded-[5px] px-3 py-2 text-white text-sm focus:outline-none border border-white/5 focus:border-primary/50 placeholder:text-white/20 transition-colors"
+                    className="w-full bg-white/5 rounded-[5px] px-3 py-3 text-white text-base focus:outline-none border border-white/5 focus:border-primary/50 placeholder:text-white/20 transition-colors"
                   />
                 </div>
 
@@ -748,7 +786,7 @@ export default function CartDrawer() {
                     <button
                       key={opt.id}
                       onClick={() => setPayMethod(opt.id)}
-                      className={`rounded-[5px] px-2 py-2.5 text-center transition-all border ${
+                      className={`rounded-[5px] px-2 py-3 min-h-[60px] text-center transition-all border ${
                         payMethod === opt.id
                           ? `${opt.color} ${opt.textColor} border-current/40 scale-[1.02]`
                           : "bg-white/5 text-white/50 border-white/5 hover:bg-white/8"
@@ -781,9 +819,12 @@ export default function CartDrawer() {
           )}
         </div>
 
-        {/* ── Footer / CTA ── */}
+        {/* ── Footer / CTA ── iOS-friendly: safe-area inset + sticky */}
         {items.length > 0 && (
-          <div className="px-6 py-5 border-t border-white/5 space-y-3">
+          <div
+            className="px-6 pt-4 border-t border-white/5 space-y-3 bg-dark-light"
+            style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+          >
             {/* Total avec livraison + pourboire */}
             <div className="space-y-0.5">
               {(deliveryFee > 0 || tip > 0) && (
@@ -848,7 +889,7 @@ export default function CartDrawer() {
                 <button
                   onClick={() => doSendOrder(true)}
                   disabled={saving}
-                  className="flex items-center justify-center gap-2 w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold py-4 rounded-[5px] text-sm transition-all hover:scale-[1.02] shadow-lg shadow-[#25D366]/20 disabled:opacity-40"
+                  className="flex items-center justify-center gap-2 w-full bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold py-4 rounded-[5px] text-base min-h-[52px] transition-all hover:scale-[1.02] shadow-lg shadow-[#25D366]/20 disabled:opacity-40"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
@@ -917,7 +958,7 @@ export default function CartDrawer() {
                 <button
                   onClick={handleOrder}
                   disabled={saving}
-                  className={`group flex items-center justify-center gap-3 w-full font-bold py-4 rounded-[5px] text-sm transition-all shadow-lg disabled:opacity-40 disabled:scale-100 disabled:cursor-not-allowed ${
+                  className={`group flex items-center justify-center gap-3 w-full font-bold py-4 rounded-[5px] text-base min-h-[52px] transition-all shadow-lg disabled:opacity-40 disabled:scale-100 disabled:cursor-not-allowed ${
                     formValid
                       ? "bg-[#25D366] hover:bg-[#20BD5A] text-white hover:scale-[1.02] shadow-[#25D366]/20"
                       : "bg-white/10 hover:bg-white/15 text-white/80 shadow-black/10"
