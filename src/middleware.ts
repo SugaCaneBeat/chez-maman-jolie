@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { canAccess, DEFAULT_ROLE, isValidRole, type AdminRole } from "@/lib/roles";
 
 export async function middleware(request: NextRequest) {
   // Only protect /admin routes (except /admin/login)
@@ -38,6 +39,17 @@ export async function middleware(request: NextRequest) {
 
   if (!user) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
+  }
+
+  /* ── RBAC : vérifie que le rôle a accès au chemin ── */
+  const roleStr = (user.app_metadata as { role?: string } | undefined)?.role;
+  const role: AdminRole = roleStr && isValidRole(roleStr) ? roleStr : DEFAULT_ROLE;
+
+  if (!canAccess(role, request.nextUrl.pathname)) {
+    /* Pas autorisé → redirige vers le dashboard avec un flag de refus */
+    const redirectUrl = new URL("/admin", request.url);
+    redirectUrl.searchParams.set("denied", "1");
+    return NextResponse.redirect(redirectUrl);
   }
 
   return response;

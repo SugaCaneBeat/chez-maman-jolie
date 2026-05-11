@@ -6,7 +6,16 @@ import {
   createAdminUser,
   deleteAdminUser,
   resetAdminPassword,
+  updateAdminUserRole,
 } from "@/lib/actions/admin-users";
+import {
+  ALL_ROLES,
+  ROLE_LABELS,
+  ROLE_DESCRIPTIONS,
+  ROLE_COLORS,
+  DEFAULT_ROLE,
+  type AdminRole,
+} from "@/lib/roles";
 
 function formatDate(iso: string | null) {
   if (!iso) return "—";
@@ -23,6 +32,7 @@ export default function UsersManager({ initialUsers }: { initialUsers: AdminUser
   /* ── Create form state ── */
   const [email, setEmail]     = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole]         = useState<AdminRole>(DEFAULT_ROLE);
   const [showPass, setShowPass] = useState(false);
   const [createMsg, setCreateMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -38,16 +48,23 @@ export default function UsersManager({ initialUsers }: { initialUsers: AdminUser
   const handleCreate = () => {
     setCreateMsg(null);
     startTransition(async () => {
-      const res = await createAdminUser(email.trim(), password);
+      const res = await createAdminUser(email.trim(), password, role);
       if (res.success) {
-        setCreateMsg({ ok: true, text: "Compte créé avec succès" });
-        setEmail(""); setPassword("");
-        // refresh list
+        setCreateMsg({ ok: true, text: `Compte ${ROLE_LABELS[role]} créé avec succès` });
+        setEmail(""); setPassword(""); setRole(DEFAULT_ROLE);
         const { listAdminUsers } = await import("@/lib/actions/admin-users");
         setUsers(await listAdminUsers());
       } else {
         setCreateMsg({ ok: false, text: res.error ?? "Erreur" });
       }
+    });
+  };
+
+  const handleRoleChange = (id: string, newRole: AdminRole) => {
+    /* optimistic */
+    setUsers((u) => u.map((x) => x.id === id ? { ...x, role: newRole } : x));
+    startTransition(async () => {
+      await updateAdminUserRole(id, newRole);
     });
   };
 
@@ -122,6 +139,33 @@ export default function UsersManager({ initialUsers }: { initialUsers: AdminUser
             </div>
           </div>
 
+          {/* Rôle */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Rôle</label>
+            <div className="grid grid-cols-3 gap-1.5">
+              {ALL_ROLES.map((r) => {
+                const isActive = role === r;
+                return (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setRole(r)}
+                    className={`px-2 py-2 rounded-[5px] text-xs text-center transition-all border ${
+                      isActive
+                        ? `${ROLE_COLORS[r].bg} ${ROLE_COLORS[r].text} border-current/40 font-bold`
+                        : "bg-gray-50 text-gray-500 border-gray-100 hover:bg-gray-100"
+                    }`}
+                  >
+                    <span className="block">{ROLE_LABELS[r]}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-gray-400 mt-1.5">
+              {ROLE_DESCRIPTIONS[role]}
+            </p>
+          </div>
+
           {createMsg && (
             <p className={`text-xs px-3 py-2 rounded-[5px] ${createMsg.ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
               {createMsg.text}
@@ -153,18 +197,36 @@ export default function UsersManager({ initialUsers }: { initialUsers: AdminUser
             {users.map((u) => (
               <li key={u.id} className="px-6 py-4">
                 <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <div className="w-8 h-8 rounded-[5px] bg-[#C9922A]/10 flex items-center justify-center flex-shrink-0">
                         <svg className="w-4 h-4 text-[#C9922A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                       </div>
                       <p className="text-sm font-semibold text-gray-800 truncate">{u.email}</p>
+                      <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-[5px] ${ROLE_COLORS[u.role].bg} ${ROLE_COLORS[u.role].text}`}>
+                        {ROLE_LABELS[u.role]}
+                      </span>
                     </div>
                     <div className="mt-1.5 pl-10 space-y-0.5">
                       <p className="text-xs text-gray-400">Créé le {formatDate(u.created_at)}</p>
                       <p className="text-xs text-gray-400">Dernière connexion : {formatDate(u.last_sign_in_at)}</p>
+                    </div>
+
+                    {/* Selector de rôle */}
+                    <div className="mt-2 pl-10 flex items-center gap-2">
+                      <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Rôle :</span>
+                      <select
+                        value={u.role}
+                        onChange={(e) => handleRoleChange(u.id, e.target.value as AdminRole)}
+                        disabled={isPending}
+                        className="border border-gray-200 rounded-[5px] px-2 py-1 text-xs focus:outline-none focus:border-[#C9922A] bg-white"
+                      >
+                        {ALL_ROLES.map((r) => (
+                          <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
