@@ -76,7 +76,7 @@ export default function AdminLogin() {
               type="text"
               value={login}
               onChange={(e) => setLogin(e.target.value)}
-              placeholder="caissier, tech ou email complet"
+              placeholder="Votre identifiant"
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
@@ -124,11 +124,6 @@ export default function AdminLogin() {
           </button>
         </form>
 
-        <p className="text-center text-white/30 text-[10px] mt-4">
-          Pseudos rapides : <span className="text-white/50">caissier</span>{" · "}
-          <span className="text-white/50">tech</span>{" · "}
-          <span className="text-white/50">ou email admin complet</span>
-        </p>
       </div>
     </div>
   );
