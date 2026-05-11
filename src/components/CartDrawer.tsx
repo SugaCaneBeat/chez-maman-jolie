@@ -173,14 +173,14 @@ export default function CartDrawer() {
     lines.push(sub);
     lines.push("");
 
-    /* Paiement */
+    /* Paiement (toujours pré-payé désormais — carte via SumUp, mobile via app) */
     if (paid) {
       lines.push(`💳 Payé via *${labels[method]}*  ·  ${grandT}`);
       lines.push("");
       lines.push("_Merci de préparer la commande._");
     } else {
-      lines.push(`💳 *Paiement : ${labels[method]}*`);
-      lines.push(`À régler au livreur par carte bancaire (TPE).`);
+      lines.push(`💳 *Paiement en attente : ${labels[method]}*`);
+      lines.push("_Le client n'a pas encore confirmé le paiement._");
     }
 
     lines.push("");

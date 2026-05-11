@@ -55,7 +55,10 @@
       "Bash(sort -t'/' -k1)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "WebFetch(domain:developer.sumup.com)",
+      "WebFetch(domain:chezmamanjolie.com)",
+      "Bash(git commit *)"
     ]
   }
 }

@@ -15,7 +15,7 @@
   },
   "tunnel": [
     { "step": 1, "title": "Choisir",    "description": "Parcourez la carte et ajoutez au panier" },
-    { "step": 2, "title": "Payer",      "description": "Wero, Lydia, PayLib ou carte à la livraison" },
+    { "step": 2, "title": "Payer",      "description": "Carte en ligne, Wero, Lydia ou PayLib" },
     { "step": 3, "title": "Notifier",   "description": "WhatsApp informe le restaurant du paiement" },
     { "step": 4, "title": "Préparation","description": "Nous préparons votre commande" },
     { "step": 5, "title": "Livraison",  "description": "Réception chaude à votre adresse" }
