@@ -51,9 +51,16 @@ const NAV_ITEMS: NavLink[] = [
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const user = await getCurrentUser();
-  const visibleNav = user
-    ? NAV_ITEMS.filter((item) => canAccess(user.role, item.href))
-    : NAV_ITEMS;
+
+  /* Page de login (utilisateur non connecté) → on n'affiche pas la sidebar.
+   * Le middleware redirige vers /admin/login dès qu'il n'y a pas de session,
+   * donc l'absence d'utilisateur signifie qu'on est forcément sur la page
+   * de connexion. */
+  if (!user) {
+    return <ToastProvider>{children}</ToastProvider>;
+  }
+
+  const visibleNav = NAV_ITEMS.filter((item) => canAccess(user.role, item.href));
 
   return (
     <ToastProvider>
