@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getPublicOrder } from "@/lib/actions/orders";
+import { getPublicOrder, buildOrderWhatsAppNotification } from "@/lib/actions/orders";
 import { verifyAndSyncSumUpPayment } from "@/lib/actions/sumup-checkout";
 import OrderStatusView from "./OrderStatusView";
 
@@ -37,7 +37,16 @@ export default async function OrderTrackingPage({
     );
   }
 
-  return <OrderStatusView initialOrder={order} justPaid={justPaid} />;
+  /* Pré-calcule l'URL de notification WhatsApp (utilisée en auto-pop côté client) */
+  const whatsappNotifyUrl = buildOrderWhatsAppNotification(order);
+
+  return (
+    <OrderStatusView
+      initialOrder={order}
+      justPaid={justPaid}
+      whatsappNotifyUrl={whatsappNotifyUrl}
+    />
+  );
 }
 
 export async function generateMetadata({
