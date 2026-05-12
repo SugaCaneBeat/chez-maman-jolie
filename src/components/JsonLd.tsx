@@ -13,6 +13,7 @@
 
 const SITE_URL = "https://www.chezmamanjolie.com";
 const PHONE = "+33753873213";
+const SOCIAL = ["https://www.instagram.com/chezmamanjolie/"];
 
 type MenuItem = {
   name: string;
@@ -301,6 +302,7 @@ function buildSchema() {
         closes: "22:30",
       },
     ],
+    sameAs: SOCIAL,
     hasMenu: { "@id": `${SITE_URL}/#menu` },
     potentialAction: {
       "@type": "OrderAction",
@@ -366,6 +368,7 @@ function buildSchema() {
     name: "Chez Maman Jolie",
     url: SITE_URL,
     logo: `${SITE_URL}/logo.svg`,
+    sameAs: SOCIAL,
     contactPoint: {
       "@type": "ContactPoint",
       telephone: PHONE,

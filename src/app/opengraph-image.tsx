@@ -160,7 +160,7 @@ export default function OpenGraphImage() {
           <span style={{ color: "#C9922A" }}>•</span>
           <span>Paris 11ème</span>
           <span style={{ color: "#C9922A" }}>•</span>
-          <span>07 53 87 32 13</span>
+          <span>@chezmamanjolie</span>
         </div>
       </div>
     ),

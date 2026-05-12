@@ -92,6 +92,14 @@ export default function Footer() {
                 </svg>
                 WhatsApp
               </a>
+              <a href="https://www.instagram.com/chezmamanjolie/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white/40 hover:text-primary transition-colors text-sm">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="18" height="18" rx="5" strokeWidth={1.5} />
+                  <circle cx="12" cy="12" r="4" strokeWidth={1.5} />
+                  <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+                </svg>
+                @chezmamanjolie
+              </a>
               <div className="flex items-start gap-2 text-white/30 text-sm">
                 <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
