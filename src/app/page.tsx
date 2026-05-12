@@ -5,10 +5,12 @@ import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import MenuTabs from "@/components/MenuTabs";
 import FormulesSection from "@/components/FormulesSection";
+import InstagramSection from "@/components/InstagramSection";
 import Livraison from "@/components/Livraison";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import InstagramButton from "@/components/InstagramButton";
 import MobileTabBar from "@/components/MobileTabBar";
 import ScrollAnimation from "@/components/ScrollAnimation";
 import JsonLd from "@/components/JsonLd";
@@ -33,6 +35,17 @@ export default async function Home() {
   /* ── Section dédiée aux formules (en dehors de la carte) ── */
   const formulesCat = categories.find((c) => c.type === "formules");
   const formulesData = formulesCat?.formulesData;
+
+  /* ── Items pour la section Instagram : on prend les plus appétissants
+   * (avec image, hors fallbacks). Priorité aux specialités si dispo. */
+  const igItems = (() => {
+    const withImg = allItems.filter((i) => i.id && i.image);
+    /* Mélange déterministe pour ne pas toujours montrer les mêmes :
+     * on prend 9 items répartis dans la liste. */
+    if (withImg.length <= 9) return withImg;
+    const step = Math.floor(withImg.length / 9);
+    return Array.from({ length: 9 }, (_, k) => withImg[k * step]).filter(Boolean);
+  })();
 
   return (
     <CartProvider>
@@ -89,13 +102,18 @@ export default async function Home() {
           </div>
         </section>
 
+        {/* Showcase Instagram — produits + CTA follow */}
+        <InstagramSection items={igItems} />
+
         <Livraison data={livraisonData} />
         <Contact />
       </main>
       <Footer />
-      {/* WhatsApp FAB — desktop uniquement */}
+      {/* FABs — WhatsApp à droite, Instagram à gauche.
+       *  Desktop uniquement : la MobileTabBar prend déjà ces actions sur mobile. */}
       <div className="hidden md:block">
         <WhatsAppButton />
+        <InstagramButton />
       </div>
       <MobileTabBar />
       <CartDrawer />
