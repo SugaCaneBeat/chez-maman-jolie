@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: "%s | Chez Maman Jolie",
   },
   description:
-    "Cuisine africaine authentique à Paris 11ème : pondu, yassa, mafé, mikaté. Livraison 7j/7 à Paris et petite couronne, traiteur événementiel. Commande WhatsApp.",
+    "Cuisine africaine authentique à Paris 11ème : pondu, yassa, mafé, mikaté. Livraison du lundi au samedi à Paris et petite couronne, traiteur événementiel. Commande WhatsApp.",
   applicationName: "Chez Maman Jolie",
   authors: [{ name: "Chez Maman Jolie" }],
   generator: "Next.js",
@@ -63,14 +63,14 @@ export const metadata: Metadata = {
     siteName: "Chez Maman Jolie",
     title: "Chez Maman Jolie | Restaurant & Traiteur Africain à Paris",
     description:
-      "Saveurs authentiques du Congo, du Sénégal et d'Afrique de l'Ouest. Livraison 7j/7 à Paris, traiteur événementiel. Commande facile par WhatsApp.",
+      "Saveurs authentiques du Congo, du Sénégal et d'Afrique de l'Ouest. Livraison du lundi au samedi à Paris, traiteur événementiel. Commande facile par WhatsApp.",
     // images : générées automatiquement via src/app/opengraph-image.tsx
   },
   twitter: {
     card: "summary_large_image",
     title: "Chez Maman Jolie | Restaurant Africain Paris 11",
     description:
-      "Cuisine africaine authentique : pondu, yassa, mafé. Livraison Paris 7j/7, traiteur événementiel.",
+      "Cuisine africaine authentique : pondu, yassa, mafé. Livraison Paris 6j/7, traiteur événementiel.",
     // images : générées automatiquement via src/app/twitter-image.tsx
   },
   /* icons:

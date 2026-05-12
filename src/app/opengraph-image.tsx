@@ -140,7 +140,7 @@ export default function OpenGraphImage() {
             lineHeight: 1.35,
           }}
         >
-          Restaurant &amp; Traiteur — Pondu, Yassa, Mafé · Livraison Paris 7j/7
+          Restaurant &amp; Traiteur — Pondu, Yassa, Mafé · Livraison Paris 6j/7
         </div>
 
         {/* Footer */}

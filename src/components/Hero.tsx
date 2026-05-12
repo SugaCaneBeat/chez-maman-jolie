@@ -67,7 +67,7 @@ export default function Hero({ featured }: { featured?: MenuItem[] }) {
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
           </span>
           <span className="text-white/80 text-xs sm:text-sm font-medium tracking-wider uppercase">
-            Livraison 7j/7 &middot; Traiteur
+            Livraison 6j/7 &middot; Traiteur
           </span>
         </div>
 
