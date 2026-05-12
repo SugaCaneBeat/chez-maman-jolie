@@ -105,9 +105,9 @@ export default function Footer() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>
-                  Lun-Ven : 11h &ndash; 21h30
+                  Lun &ndash; Sam : 11h &ndash; 21h30
                   <br />
-                  Sam-Dim : 11h &ndash; 22h30
+                  Dimanche : ferm&eacute;
                 </span>
               </div>
             </div>

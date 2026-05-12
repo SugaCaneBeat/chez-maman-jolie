@@ -72,9 +72,9 @@ export default function Contact() {
               </div>
               <h3 className="font-bold text-white text-sm mb-2">Horaires</h3>
               <p className="text-white/40 text-xs leading-relaxed">
-                Lun-Ven : 11h &ndash; 21h30
+                Lun &ndash; Sam : 11h &ndash; 21h30
                 <br />
-                Sam-Dim : 11h &ndash; 22h30
+                Dimanche : ferm&eacute;
               </p>
             </div>
 

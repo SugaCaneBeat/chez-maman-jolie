@@ -235,7 +235,7 @@ const FAQ: Array<{ question: string; answer: string }> = [
   {
     question: "Quels sont vos horaires ?",
     answer:
-      "Du lundi au vendredi de 11h à 21h30, le samedi de 11h à 22h30. Fermé le dimanche.",
+      "Livraison du lundi au samedi, de 11h à 21h30. Fermé le dimanche.",
   },
   {
     question: "Qu'est-ce que le pondu ?",
@@ -291,15 +291,10 @@ function buildSchema() {
           "Wednesday",
           "Thursday",
           "Friday",
+          "Saturday",
         ],
         opens: "11:00",
         closes: "21:30",
-      },
-      {
-        "@type": "OpeningHoursSpecification",
-        dayOfWeek: "Saturday",
-        opens: "11:00",
-        closes: "22:30",
       },
     ],
     sameAs: SOCIAL,

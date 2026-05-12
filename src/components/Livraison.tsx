@@ -47,9 +47,9 @@ interface LivraisonData {
   minimum: string;
   paiement: string[];
   horaires: {
-    semaine: { jours: string; heures: string };
-    weekend: { jours: string; heures: string };
-    ferme?:  { jours: string; heures: string };
+    semaine:  { jours: string; heures: string };
+    weekend?: { jours: string; heures: string };
+    ferme?:   { jours: string; heures: string };
   };
   tunnel: TunnelStep[];
 }
@@ -173,8 +173,12 @@ export default function Livraison({ data }: { data: LivraisonData }) {
               <h4 className="text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Horaires</h4>
               <p className="text-white/60 text-xs leading-relaxed">
                 {data.horaires.semaine.jours} : {data.horaires.semaine.heures}
-                <br />
-                {data.horaires.weekend.jours} : {data.horaires.weekend.heures}
+                {data.horaires.weekend && (
+                  <>
+                    <br />
+                    {data.horaires.weekend.jours} : {data.horaires.weekend.heures}
+                  </>
+                )}
                 {data.horaires.ferme && (
                   <>
                     <br />

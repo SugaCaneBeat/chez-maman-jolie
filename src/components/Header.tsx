@@ -265,7 +265,7 @@ export default function Header() {
             </button>
 
             <p className="text-center text-white/30 text-xs pt-2">
-              07 53 87 32 13 &middot; Lun-Dim 11h&ndash;22h
+              07 53 87 32 13 &middot; Lun&ndash;Sam 11h&ndash;21h30
             </p>
           </div>
         </div>

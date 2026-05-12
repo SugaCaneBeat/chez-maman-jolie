@@ -9,9 +9,8 @@
   "minimum": "25 €",
   "paiement": ["Carte bancaire"],
   "horaires": {
-    "semaine": { "jours": "Lundi – Vendredi", "heures": "11h00 – 21h30" },
-    "weekend": { "jours": "Samedi",           "heures": "11h00 – 22h30" },
-    "ferme":   { "jours": "Dimanche",         "heures": "Fermé" }
+    "semaine": { "jours": "Lundi – Samedi", "heures": "11h00 – 21h30" },
+    "ferme":   { "jours": "Dimanche",       "heures": "Fermé" }
   },
   "tunnel": [
     { "step": 1, "title": "Choisir",    "description": "Parcourez la carte et ajoutez au panier" },
