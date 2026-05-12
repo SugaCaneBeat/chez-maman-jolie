@@ -90,6 +90,13 @@ export const metadata: Metadata = {
     "restaurant:contact_info:locality": "Paris",
     "restaurant:contact_info:region": "Île-de-France",
     "restaurant:contact_info:country_name": "France",
+    /* Vérification de domaine Meta (Facebook + Instagram).
+     * Active les liens cliquables dans les stories Instagram et
+     * claim le domaine sur Meta Business Suite.
+     * Le token vient de Meta Business Suite → Brand Safety → Domains. */
+    ...(process.env.NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION
+      ? { "facebook-domain-verification": process.env.NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION }
+      : {}),
   },
 };
 
