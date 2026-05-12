@@ -1,0 +1,412 @@
+<!--
+============================================================
+DONNÉES STRUCTURÉES JSON-LD (Schema.org)
+============================================================
+À insérer dans le <head> de la page d'accueil.
+Permet à Google d'afficher des résultats enrichis :
+- Fiche restaurant dans Google Maps / Search
+- Étoiles d'avis
+- Menu directement dans les résultats
+- FAQ en accordéon
+- Fil d'Ariane
+============================================================
+-->
+
+<!-- ========== 1. RESTAURANT (le plus important) ========== -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Restaurant",
+  "@id": "https://www.chezmamanjolie.com/#restaurant",
+  "name": "Chez Maman Jolie",
+  "alternateName": "Maman Jolie - Cuisine Africaine",
+  "description": "Restaurant et traiteur spécialisé en cuisine africaine authentique du Congo, du Sénégal et d'Afrique de l'Ouest. Livraison à Paris et petite couronne, traiteur événementiel.",
+  "url": "https://www.chezmamanjolie.com",
+  "logo": "https://www.chezmamanjolie.com/logo.svg",
+  "image": [
+    "https://www.chezmamanjolie.com/og-image.jpg"
+  ],
+  "telephone": "+33753873213",
+  "priceRange": "€€",
+  "servesCuisine": [
+    "Cuisine africaine",
+    "Cuisine congolaise",
+    "Cuisine sénégalaise",
+    "Cuisine ouest-africaine"
+  ],
+  "acceptsReservations": false,
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Adresse à compléter",
+    "addressLocality": "Paris",
+    "addressRegion": "Île-de-France",
+    "postalCode": "75011",
+    "addressCountry": "FR"
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": 48.8634,
+    "longitude": 2.3789
+  },
+  "openingHoursSpecification": [
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      "opens": "11:00",
+      "closes": "21:30"
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": "Saturday",
+      "opens": "11:00",
+      "closes": "22:30"
+    }
+  ],
+  "sameAs": [
+    "https://www.facebook.com/chezmamanjolie",
+    "https://www.instagram.com/chezmamanjolie",
+    "https://www.tiktok.com/@chezmamanjolie"
+  ],
+  "hasMenu": {
+    "@id": "https://www.chezmamanjolie.com/#menu"
+  },
+  "potentialAction": {
+    "@type": "OrderAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "https://wa.me/33753873213",
+      "inLanguage": "fr-FR",
+      "actionPlatform": [
+        "http://schema.org/DesktopWebPlatform",
+        "http://schema.org/MobileWebPlatform"
+      ]
+    },
+    "deliveryMethod": [
+      "http://schema.org/ParcelService"
+    ]
+  },
+  "areaServed": [
+    { "@type": "City", "name": "Paris" },
+    { "@type": "AdministrativeArea", "name": "Hauts-de-Seine" },
+    { "@type": "AdministrativeArea", "name": "Seine-Saint-Denis" },
+    { "@type": "AdministrativeArea", "name": "Val-de-Marne" }
+  ]
+}
+</script>
+
+<!-- ========== 2. MENU COMPLET ========== -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Menu",
+  "@id": "https://www.chezmamanjolie.com/#menu",
+  "name": "Carte Chez Maman Jolie",
+  "inLanguage": "fr",
+  "hasMenuSection": [
+    {
+      "@type": "MenuSection",
+      "name": "Entrées",
+      "hasMenuItem": [
+        {
+          "@type": "MenuItem",
+          "name": "4 Samoussas bœuf",
+          "description": "Samoussas croustillants garnis de bœuf épicé, préparation maison.",
+          "offers": { "@type": "Offer", "price": "5.90", "priceCurrency": "EUR" }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Mikaté",
+          "description": "Beignets africains moelleux et légèrement sucrés, traditionnellement servis en entrée ou en accompagnement.",
+          "offers": { "@type": "Offer", "price": "5.90", "priceCurrency": "EUR" }
+        }
+      ]
+    },
+    {
+      "@type": "MenuSection",
+      "name": "Spécialités Maison",
+      "hasMenuItem": [
+        {
+          "@type": "MenuItem",
+          "name": "Madesu (haricots)",
+          "description": "Haricots rouges mijotés à la mode congolaise, servis avec du riz.",
+          "offers": { "@type": "Offer", "price": "8.00", "priceCurrency": "EUR" }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "5 Ailes de poulet",
+          "description": "Ailes de poulet marinées et grillées, servies avec banane plantain.",
+          "offers": { "@type": "Offer", "price": "9.00", "priceCurrency": "EUR" }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Yassa Poulet",
+          "description": "Plat sénégalais emblématique : poulet mariné au citron et aux oignons confits, servi avec du riz.",
+          "offers": { "@type": "Offer", "price": "9.00", "priceCurrency": "EUR" }
+        }
+      ]
+    },
+    {
+      "@type": "MenuSection",
+      "name": "Viandes",
+      "hasMenuItem": [
+        {
+          "@type": "MenuItem",
+          "name": "5 Brochettes",
+          "description": "Brochettes de bœuf marinées et grillées au feu de bois.",
+          "offers": { "@type": "Offer", "price": "12.00", "priceCurrency": "EUR" }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Makosso (bouillon)",
+          "description": "Bouillon traditionnel congolais, riche en saveurs et en épices.",
+          "offers": { "@type": "Offer", "price": "12.00", "priceCurrency": "EUR" }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Cuisses de poulet",
+          "description": "Cuisses de poulet rôties à la mode africaine, juteuses et savoureuses.",
+          "offers": { "@type": "Offer", "price": "12.00", "priceCurrency": "EUR" }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Ntaba — chèvre",
+          "description": "Chèvre mijotée à la congolaise, viande tendre et parfumée.",
+          "offers": { "@type": "Offer", "price": "15.00", "priceCurrency": "EUR" }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Ngulu bouillon",
+          "description": "Bouillon de porc traditionnel, plat généreux et réconfortant.",
+          "offers": { "@type": "Offer", "price": "15.00", "priceCurrency": "EUR" }
+        }
+      ]
+    },
+    {
+      "@type": "MenuSection",
+      "name": "Poissons",
+      "hasMenuItem": [
+        {
+          "@type": "MenuItem",
+          "name": "Malangwa",
+          "description": "Poisson traditionnel africain, préparé selon la recette ancestrale.",
+          "offers": { "@type": "Offer", "price": "15.00", "priceCurrency": "EUR" }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Makayabu",
+          "description": "Morue salée et séchée, spécialité congolaise très appréciée.",
+          "offers": { "@type": "Offer", "price": "15.00", "priceCurrency": "EUR" }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Dorade entière",
+          "description": "Dorade fraîche grillée, assaisonnée aux épices africaines.",
+          "offers": { "@type": "Offer", "price": "16.00", "priceCurrency": "EUR" }
+        }
+      ]
+    },
+    {
+      "@type": "MenuSection",
+      "name": "Cuisine Mijotée",
+      "hasMenuItem": [
+        {
+          "@type": "MenuItem",
+          "name": "Poulet Mafé",
+          "description": "Plat sénégalais emblématique : poulet mijoté dans une sauce onctueuse à la pâte d'arachide.",
+          "offers": { "@type": "Offer", "price": "12.00", "priceCurrency": "EUR" }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Yassa",
+          "description": "Spécialité sénégalaise à base d'oignons confits et de citron, servie avec du riz.",
+          "offers": { "@type": "Offer", "price": "12.00", "priceCurrency": "EUR" }
+        }
+      ]
+    },
+    {
+      "@type": "MenuSection",
+      "name": "Légumes",
+      "hasMenuItem": [
+        {
+          "@type": "MenuItem",
+          "name": "Pondu",
+          "description": "Feuilles de manioc pilées, plat national de la République Démocratique du Congo, mijotées avec huile de palme et épices.",
+          "offers": { "@type": "Offer", "price": "7.00", "priceCurrency": "EUR" }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Fumbwa",
+          "description": "Feuilles sauvages congolaises mijotées, plat raffiné et parfumé.",
+          "offers": { "@type": "Offer", "price": "7.00", "priceCurrency": "EUR" }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Légumes verts",
+          "description": "Légumes verts sautés à l'africaine.",
+          "offers": { "@type": "Offer", "price": "7.00", "priceCurrency": "EUR" }
+        }
+      ]
+    },
+    {
+      "@type": "MenuSection",
+      "name": "Accompagnements",
+      "hasMenuItem": [
+        {
+          "@type": "MenuItem",
+          "name": "Makemba (bananes plantains)",
+          "description": "Bananes plantains frites ou bouillies, accompagnement traditionnel.",
+          "offers": { "@type": "Offer", "price": "3.00", "priceCurrency": "EUR" }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Chikwangue",
+          "description": "Pain de manioc fermenté, accompagnement emblématique de la cuisine congolaise.",
+          "offers": { "@type": "Offer", "price": "3.00", "priceCurrency": "EUR" }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Riz",
+          "description": "Riz blanc parfumé.",
+          "offers": { "@type": "Offer", "price": "3.00", "priceCurrency": "EUR" }
+        }
+      ]
+    },
+    {
+      "@type": "MenuSection",
+      "name": "Desserts",
+      "hasMenuItem": [
+        {
+          "@type": "MenuItem",
+          "name": "Tiramisu Mangue & Spéculos",
+          "description": "Tiramisu maison revisité à la mangue et au spéculoos.",
+          "offers": { "@type": "Offer", "price": "3.30", "priceCurrency": "EUR" }
+        }
+      ]
+    },
+    {
+      "@type": "MenuSection",
+      "name": "Boissons",
+      "hasMenuItem": [
+        {
+          "@type": "MenuItem",
+          "name": "Bissap",
+          "description": "Boisson rafraîchissante à base de fleurs d'hibiscus, spécialité d'Afrique de l'Ouest.",
+          "offers": { "@type": "Offer", "price": "3.00", "priceCurrency": "EUR" }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Gingembre",
+          "description": "Boisson épicée au gingembre frais, recette traditionnelle.",
+          "offers": { "@type": "Offer", "price": "3.00", "priceCurrency": "EUR" }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Coca-Cola / Fanta / Sprite",
+          "offers": { "@type": "Offer", "price": "2.00", "priceCurrency": "EUR" }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Eau minérale",
+          "offers": { "@type": "Offer", "price": "1.50", "priceCurrency": "EUR" }
+        }
+      ]
+    }
+  ]
+}
+</script>
+
+<!-- ========== 3. FAQ (apparaît en accordéon dans Google) ========== -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Quelle cuisine propose Chez Maman Jolie ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Chez Maman Jolie propose une cuisine africaine authentique avec des spécialités du Congo (pondu, fumbwa, madesu, makayabu), du Sénégal (yassa, mafé, thiéboudiène) et d'Afrique de l'Ouest. Tous les plats sont préparés maison avec des ingrédients frais."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Où livrez-vous ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nous livrons à Paris et en petite couronne depuis Paris 11ème. Zone 1 (moins de 3 km) : livraison gratuite. Zone 2 (3 à 6 km) : 2,50€. Zone 3 (6 à 10 km) : 4,50€ dès 30€ de commande, sinon 6€. Commande minimum : 25€."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Comment commander ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Commandez directement par WhatsApp au 07 53 87 32 13 ou via le site. Paiement sécurisé par carte bancaire. Livraison en 30 à 50 minutes selon la zone."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Proposez-vous un service traiteur pour les événements ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, Chez Maman Jolie propose un service traiteur événementiel pour mariages, anniversaires, baptêmes, repas d'entreprise et toute occasion spéciale. Contactez-nous par WhatsApp pour un devis personnalisé."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quels sont vos horaires ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Du lundi au vendredi de 11h à 21h30, le samedi de 11h à 22h30. Fermé le dimanche."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Qu'est-ce que le pondu ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Le pondu est le plat national de la République Démocratique du Congo. Il s'agit de feuilles de manioc pilées et mijotées longuement avec de l'huile de palme, de l'oignon, de l'ail et des épices. C'est l'un de nos plats signatures."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Qu'est-ce que le yassa ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Le yassa est une spécialité sénégalaise emblématique : du poulet (ou du poisson) mariné dans du jus de citron et mijoté avec des oignons confits. Plat à la fois acidulé et fondant, servi avec du riz blanc."
+      }
+    }
+  ]
+}
+</script>
+
+<!-- ========== 4. ORGANISATION (entité de marque) ========== -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://www.chezmamanjolie.com/#organization",
+  "name": "Chez Maman Jolie",
+  "url": "https://www.chezmamanjolie.com",
+  "logo": "https://www.chezmamanjolie.com/logo.svg",
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "telephone": "+33753873213",
+    "contactType": "customer service",
+    "areaServed": "FR",
+    "availableLanguage": ["French"]
+  }
+}
+</script>
+
+<!-- ========== 5. SITE WEB (pour la sitelinks searchbox) ========== -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Chez Maman Jolie",
+  "url": "https://www.chezmamanjolie.com",
+  "inLanguage": "fr-FR"
+}
+</script>

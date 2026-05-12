@@ -1,0 +1,33 @@
+# ============================================================
+# robots.txt - Chez Maman Jolie
+# À placer à la racine : https://www.chezmamanjolie.com/robots.txt
+# ============================================================
+
+# Autoriser tous les robots à indexer le site
+User-agent: *
+Allow: /
+
+# Bloquer les zones techniques inutiles
+Disallow: /api/
+Disallow: /_next/
+Disallow: /admin/
+Disallow: /panier
+Disallow: /checkout
+Disallow: /*?utm_*
+Disallow: /*?fbclid=*
+Disallow: /*?gclid=*
+
+# Autoriser les images optimisées Next.js (important pour SEO image)
+Allow: /_next/image
+Allow: /_next/static/media/
+
+# Bloquer les robots IA agressifs (optionnel - à activer si souhaité)
+# User-agent: GPTBot
+# Disallow: /
+# User-agent: ClaudeBot
+# Disallow: /
+# User-agent: CCBot
+# Disallow: /
+
+# Sitemap
+Sitemap: https://www.chezmamanjolie.com/sitemap.xml

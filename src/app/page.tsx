@@ -11,6 +11,7 @@ import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import MobileTabBar from "@/components/MobileTabBar";
 import ScrollAnimation from "@/components/ScrollAnimation";
+import JsonLd from "@/components/JsonLd";
 import { getMenuData } from "@/lib/menu";
 
 import livraisonData from "@/data/livraison.json";
@@ -35,6 +36,7 @@ export default async function Home() {
 
   return (
     <CartProvider>
+      <JsonLd />
       <Header />
       <main className="bg-dark">
         <Hero featured={featured} />
