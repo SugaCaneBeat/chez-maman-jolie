@@ -2,6 +2,14 @@
 
 import { createServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { requireRole } from "@/lib/auth/require-role";
+
+const MENU_ROLES = ["admin", "tech"] as const;
+
+function genericFail(scope: string, msg: string) {
+  console.warn(`[boissons] ${scope}:`, msg);
+  return { success: false as const, error: "Opération impossible" };
+}
 
 /* ─── Types ─── */
 export interface BoissonItemAdmin {
@@ -25,6 +33,9 @@ export interface BoissonSubcategoryAdmin {
 export async function listBoissonSubcategories(
   categoryId: string
 ): Promise<BoissonSubcategoryAdmin[]> {
+  const auth = await requireRole([...MENU_ROLES]);
+  if (!auth.ok) return [];
+
   const supabase = createServerClient();
 
   const { data: subs, error } = await supabase
@@ -67,6 +78,9 @@ export async function createBoissonSubcategory(
   name: string,
   image?: string
 ): Promise<{ success: boolean; id?: string; error?: string }> {
+  const auth = await requireRole([...MENU_ROLES]);
+  if (!auth.ok) return auth.error;
+
   if (!name.trim()) return { success: false, error: "Nom requis" };
   const supabase = createServerClient();
 
@@ -90,7 +104,7 @@ export async function createBoissonSubcategory(
     .select("id")
     .single();
 
-  if (error || !data) return { success: false, error: error?.message || "Erreur" };
+  if (error || !data) return genericFail("createBoissonSubcategory", error?.message ?? "no data");
 
   revalidatePath("/admin/menu");
   revalidatePath("/");
@@ -101,6 +115,9 @@ export async function updateBoissonSubcategory(
   id: string,
   data: { name?: string; image?: string | null }
 ): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireRole([...MENU_ROLES]);
+  if (!auth.ok) return auth.error;
+
   const supabase = createServerClient();
   const patch: Record<string, unknown> = {};
   if (data.name !== undefined)  patch.name = data.name.trim();
@@ -111,7 +128,7 @@ export async function updateBoissonSubcategory(
     .update(patch)
     .eq("id", id);
 
-  if (error) return { success: false, error: error.message };
+  if (error) return genericFail("updateBoissonSubcategory", error.message);
   revalidatePath("/admin/menu");
   revalidatePath("/");
   return { success: true };
@@ -120,6 +137,9 @@ export async function updateBoissonSubcategory(
 export async function deleteBoissonSubcategory(
   id: string
 ): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireRole([...MENU_ROLES]);
+  if (!auth.ok) return auth.error;
+
   const supabase = createServerClient();
   /* Les items seront supprimés via ON DELETE CASCADE si la FK est configurée,
      sinon on les supprime manuellement d'abord */
@@ -129,7 +149,7 @@ export async function deleteBoissonSubcategory(
     .delete()
     .eq("id", id);
 
-  if (error) return { success: false, error: error.message };
+  if (error) return genericFail("deleteBoissonSubcategory", error.message);
   revalidatePath("/admin/menu");
   revalidatePath("/");
   return { success: true };
@@ -143,6 +163,9 @@ export async function createBoissonItem(
   price: number,
   image?: string
 ): Promise<{ success: boolean; id?: string; error?: string }> {
+  const auth = await requireRole([...MENU_ROLES]);
+  if (!auth.ok) return auth.error;
+
   if (!name.trim()) return { success: false, error: "Nom requis" };
   if (!(price > 0)) return { success: false, error: "Prix invalide" };
 
@@ -170,7 +193,7 @@ export async function createBoissonItem(
     .select("id")
     .single();
 
-  if (error || !data) return { success: false, error: error?.message || "Erreur" };
+  if (error || !data) return genericFail("createBoissonItem", error?.message ?? "no data");
   revalidatePath("/admin/menu");
   revalidatePath("/");
   return { success: true, id: data.id };
@@ -180,6 +203,9 @@ export async function updateBoissonItem(
   id: string,
   data: { name?: string; price?: number; image?: string | null }
 ): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireRole([...MENU_ROLES]);
+  if (!auth.ok) return auth.error;
+
   const supabase = createServerClient();
   const patch: Record<string, unknown> = {};
   if (data.name !== undefined)  patch.name = data.name.trim();
@@ -187,7 +213,7 @@ export async function updateBoissonItem(
   if (data.image !== undefined) patch.image = data.image || null;
 
   const { error } = await supabase.from("menu_items").update(patch).eq("id", id);
-  if (error) return { success: false, error: error.message };
+  if (error) return genericFail("updateBoissonItem", error.message);
   revalidatePath("/admin/menu");
   revalidatePath("/");
   return { success: true };
@@ -196,9 +222,12 @@ export async function updateBoissonItem(
 export async function deleteBoissonItem(
   id: string
 ): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireRole([...MENU_ROLES]);
+  if (!auth.ok) return auth.error;
+
   const supabase = createServerClient();
   const { error } = await supabase.from("menu_items").delete().eq("id", id);
-  if (error) return { success: false, error: error.message };
+  if (error) return genericFail("deleteBoissonItem", error.message);
   revalidatePath("/admin/menu");
   revalidatePath("/");
   return { success: true };
@@ -208,6 +237,9 @@ export async function toggleBoissonItemAvailable(
   id: string,
   available: boolean
 ): Promise<{ success: boolean }> {
+  const auth = await requireRole([...MENU_ROLES]);
+  if (!auth.ok) return { success: false };
+
   const supabase = createServerClient();
   const { error } = await supabase.from("menu_items").update({ available }).eq("id", id);
   if (error) return { success: false };

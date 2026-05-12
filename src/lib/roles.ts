@@ -61,5 +61,7 @@ export function isValidRole(s: string): s is AdminRole {
   return (ALL_ROLES as string[]).includes(s);
 }
 
-/* Récupère le rôle par défaut si l'utilisateur n'en a pas un défini */
-export const DEFAULT_ROLE: AdminRole = "admin";
+/* Aucun rôle par défaut : un user sans app_metadata.role explicite est
+ * refusé partout. Ne JAMAIS mettre "admin" ici — n'importe quel inscrit
+ * Supabase deviendrait admin si l'inscription publique est activée. */
+export const DEFAULT_ROLE: AdminRole | null = null;

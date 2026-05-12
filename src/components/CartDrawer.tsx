@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useCart } from "@/context/CartContext";
 import { createOrder } from "@/lib/actions/orders";
 import { createSumUpCheckoutForOrder } from "@/lib/actions/sumup-checkout";
-import { resolveZone, type ZoneInfo, type GeocodedAddress, DEPART_LABEL } from "@/lib/geo";
+import { resolveZone, type ZoneInfo, type GeocodedAddress } from "@/lib/geo";
 import Image from "next/image";
 
 /* ─── Constantes ─── */
@@ -13,15 +13,9 @@ const DEPART = "Paris 11ème";
 /* Minimum de commande */
 const MIN_ORDER = 25;
 
-/* Un seul mode de paiement: carte bancaire via SumUp (online checkout) */
-type PayMethod = "carte";
-
 
 export default function CartDrawer() {
   const { items, isDrawerOpen, setDrawerOpen, updateQuantity, removeItem, clearCart, getTotal, getCount } = useCart();
-
-  /* Carte est le seul moyen de paiement — pré-sélectionné */
-  const payMethod: PayMethod = "carte";
 
   /* ── Customer info: split fields ── */
   const [prenom, setPrenom]         = useState("");
@@ -36,9 +30,11 @@ export default function CartDrawer() {
   const [saving, setSaving]       = useState(false);
   const [showErrors, setShowErrors] = useState(false);
 
-  /* ── Geolocation state ── */
-  const [zoneInfo, setZoneInfo] = useState<ZoneInfo | null>(null);
-  const [geocoded, setGeocoded] = useState<GeocodedAddress | null>(null);
+  /* ── Geolocation state ──
+   * On stocke le résultat brut. zoneInfo dérive de addressValid pour
+   * éviter un setState de reset dans l'effet (cascading render). */
+  const [rawZoneInfo, setRawZoneInfo] = useState<ZoneInfo | null>(null);
+  const [rawGeocoded, setRawGeocoded] = useState<GeocodedAddress | null>(null);
   const [geocoding, setGeocoding] = useState(false);
 
   /* ── Flow step: "form" → "payment" → "sent" ── */
@@ -58,10 +54,11 @@ export default function CartDrawer() {
       ? `${numRue.trim()}, ${codePostal.trim()} ${ville.trim()}`.trim()
       : "";
 
-  /* ── Validation ── */
+  /* ── Validation ──
+   *   zoneInfo et geocoded sont dérivés : null tant que l'adresse n'est
+   *   pas valide. Le setState de reset n'a plus besoin d'être fait dans
+   *   l'effet de géocodage. */
   const subtotal       = getTotal();
-  const deliveryFee    = zoneInfo && !zoneInfo.outOfRange ? zoneInfo.fee : 0;
-  const grandTotal     = subtotal + deliveryFee + tip;
   const minOrderValid  = subtotal >= MIN_ORDER;
   const prenomValid    = prenom.trim().length >= 2;
   const nomValid       = nom.trim().length >= 2;
@@ -71,6 +68,12 @@ export default function CartDrawer() {
   const codePostalValid = /^\d{5}$/.test(codePostal.trim());
   const villeValid     = ville.trim().length >= 2;
   const addressValid   = numRueValid && codePostalValid && villeValid;
+  /* Dérivés : null tant que l'adresse n'est pas valide. */
+  const zoneInfo: ZoneInfo | null = addressValid ? rawZoneInfo : null;
+  /* geocoded gardé pour affichage futur du label de zone */
+  void (addressValid ? rawGeocoded : null);
+  const deliveryFee    = zoneInfo && !zoneInfo.outOfRange ? zoneInfo.fee : 0;
+  const grandTotal     = subtotal + deliveryFee + tip;
   const zoneValid      = zoneInfo !== null && !zoneInfo.outOfRange;
   const formValid      = minOrderValid && prenomValid && nomValid && telValid && addressValid && zoneValid;
 
@@ -122,26 +125,23 @@ export default function CartDrawer() {
     return () => document.removeEventListener("focusin", handleFocusIn);
   }, [isDrawerOpen]);
 
-  /* ── Géocoder l'adresse (debounced) dès qu'elle change ── */
+  /* ── Géocoder l'adresse (debounced) dès qu'elle change ──
+   *   Pas de reset sync : zoneInfo / geocoded sont dérivés via addressValid.
+   *   Quand l'adresse n'est plus valide, on ne lance simplement plus de fetch. */
   useEffect(() => {
-    if (!addressValid) {
-      setZoneInfo(null);
-      setGeocoded(null);
-      return;
-    }
-    setGeocoding(true);
+    if (!addressValid) return;
+    let cancelled = false;
     const handle = setTimeout(async () => {
       const res = await resolveZone(fullAddress);
-      if (res) {
-        setGeocoded(res.geo);
-        setZoneInfo(res.zoneInfo);
-      } else {
-        setGeocoded(null);
-        setZoneInfo(null);
-      }
+      if (cancelled) return;
+      setRawGeocoded(res?.geo ?? null);
+      setRawZoneInfo(res?.zoneInfo ?? null);
       setGeocoding(false);
     }, 700);
-    return () => { clearTimeout(handle); setGeocoding(false); };
+    /* setGeocoding(true) après le setTimeout pour ne pas le faire dans le body
+     * de l'effet de manière synchrone — on accepte un léger délai d'affichage. */
+    queueMicrotask(() => { if (!cancelled) setGeocoding(true); });
+    return () => { cancelled = true; clearTimeout(handle); };
   }, [fullAddress, addressValid]);
 
   const formatPrice = (p: number) =>
@@ -180,9 +180,11 @@ export default function CartDrawer() {
   const doCardCheckout = async () => {
     setSaving(true);
     try {
-      /* 1) Créer la commande en "pending" */
+      /* 1) Créer la commande en "pending"
+       *    Le serveur recalcule le total à partir des vrais prix
+       *    (on n'envoie plus que les IDs et quantités). */
       const orderRes = await createOrder({
-        items: items.map(i => ({ name: i.name, price: i.price, quantity: i.quantity, image: i.image })),
+        items: items.map(i => ({ menuItemId: i.id, quantity: i.quantity })),
         customerName: `${prenom} ${nom}`.trim(),
         customerPhone: tel,
         customerAddress: complement.trim()
@@ -190,20 +192,22 @@ export default function CartDrawer() {
           : `${numRue}\n${codePostal} ${ville}`,
         paymentMethod: "carte",
         paid: false,
-        total: grandTotal,
         tip,
+        deliveryFee,
+        zoneLabel: zoneInfo?.zone != null ? `Zone ${zoneInfo.zone}` : undefined,
+        distanceKm: zoneInfo?.distanceKm,
       });
-      if (!orderRes.success || !orderRes.orderId || !orderRes.orderNumber) {
+      if (!orderRes.success || !orderRes.orderId || !orderRes.orderNumber || !orderRes.total) {
         setSaving(false);
         alert(orderRes.error ?? "Erreur lors de la création de la commande");
         return;
       }
 
-      /* 2) Créer le checkout SumUp côté serveur */
+      /* 2) Créer le checkout SumUp côté serveur — montant authoritatif */
       const checkoutRes = await createSumUpCheckoutForOrder(
         orderRes.orderId,
         orderRes.orderNumber,
-        grandTotal
+        orderRes.total
       );
       if (!checkoutRes.success || !checkoutRes.checkoutId) {
         setSaving(false);
@@ -254,7 +258,7 @@ export default function CartDrawer() {
             className="w-10 h-10 rounded-[5px] glass flex items-center justify-center hover:bg-white/10 transition-colors"
             aria-label="Fermer"
           >
-            <svg className="w-5 h-5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" className="w-5 h-5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12"/>
             </svg>
           </button>
@@ -265,7 +269,7 @@ export default function CartDrawer() {
           {/* Items */}
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-20">
-              <svg className="w-16 h-16 text-white/20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-16 h-16 text-white/20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
               </svg>
               <p className="text-white/40 text-sm">Votre panier est vide</p>
@@ -285,16 +289,16 @@ export default function CartDrawer() {
                     <div className="flex-1 min-w-0">
                       <h4 className="text-white text-sm font-semibold truncate">{item.name}</h4>
                       <p className="text-primary text-sm font-bold mt-0.5">{formatPrice(item.price)}</p>
-                      <div className="flex items-center gap-3 mt-2">
-                        <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="w-7 h-7 rounded-[5px] bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
-                          <svg className="w-3.5 h-3.5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4"/></svg>
+                      <div className="flex items-center gap-2 mt-2">
+                        <button aria-label="Diminuer la quantité" onClick={() => updateQuantity(item.id, item.quantity - 1)} className="w-11 h-11 rounded-[5px] bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
+                          <svg aria-hidden="true" className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4"/></svg>
                         </button>
                         <span className="text-white font-bold text-sm w-6 text-center">{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="w-7 h-7 rounded-[5px] bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
-                          <svg className="w-3.5 h-3.5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
+                        <button aria-label="Augmenter la quantité" onClick={() => updateQuantity(item.id, item.quantity + 1)} className="w-11 h-11 rounded-[5px] bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
+                          <svg aria-hidden="true" className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
                         </button>
-                        <button onClick={() => removeItem(item.id)} className="ml-auto w-7 h-7 rounded-[5px] hover:bg-accent/20 flex items-center justify-center transition-colors">
-                          <svg className="w-3.5 h-3.5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        <button aria-label={`Retirer ${item.name} du panier`} onClick={() => removeItem(item.id)} className="ml-auto w-11 h-11 rounded-[5px] hover:bg-accent/20 flex items-center justify-center transition-colors">
+                          <svg aria-hidden="true" className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                         </button>
                       </div>
                     </div>
@@ -323,11 +327,11 @@ export default function CartDrawer() {
                     <div className="flex items-center justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2 min-w-0">
                         {reached ? (
-                          <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg aria-hidden="true" className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
                           </svg>
                         ) : (
-                          <svg className="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg aria-hidden="true" className="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                           </svg>
                         )}
@@ -569,7 +573,7 @@ export default function CartDrawer() {
                   <div className="mt-1">
                     {geocoding && (
                       <p className="text-[10px] text-white/40 flex items-center gap-1.5">
-                        <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <svg aria-hidden="true" className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
                           <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" className="opacity-25"/>
                           <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="2" fill="none"/>
                         </svg>
@@ -582,7 +586,7 @@ export default function CartDrawer() {
                         zoneInfo.zone === 2 ? "bg-sky-500/10 text-sky-300" :
                                                 "bg-amber-500/10 text-amber-300"
                       }`}>
-                        <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg aria-hidden="true" className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
                         </svg>
                         <span className="flex-1">
@@ -593,7 +597,7 @@ export default function CartDrawer() {
                     )}
                     {!geocoding && zoneInfo && zoneInfo.outOfRange && (
                       <div className="text-[10px] rounded-[5px] px-2 py-1.5 bg-red-500/10 text-red-300 flex items-center gap-1.5">
-                        <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg aria-hidden="true" className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                         </svg>
                         Hors zone de livraison ({zoneInfo.distanceKm.toFixed(1)} km — maximum 10 km)
@@ -608,7 +612,7 @@ export default function CartDrawer() {
                 )}
 
                 <p className="text-[10px] text-white/30 mt-1 flex items-center gap-1">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg aria-hidden="true" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                   </svg>
                   Livraison depuis {DEPART} &middot; distance calculée automatiquement
@@ -618,7 +622,7 @@ export default function CartDrawer() {
               {/* ── Paiement carte bancaire (seul mode disponible) ── */}
               <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-[5px] p-4 flex items-start gap-3">
                 <div className="w-10 h-10 rounded-[5px] bg-indigo-500/15 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg aria-hidden="true" className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                   </svg>
                 </div>
@@ -670,7 +674,7 @@ export default function CartDrawer() {
             {/* Validation banner above the button */}
             {showErrors && !formValid && (
                   <div className="bg-red-500/10 border border-red-500/30 rounded-[5px] px-3 py-2 flex items-start gap-2">
-                    <svg className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg aria-hidden="true" className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                     </svg>
                     <p className="text-red-300 text-xs leading-snug">
@@ -689,11 +693,11 @@ export default function CartDrawer() {
                   }`}
                 >
                   {formValid ? (
-                    <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg aria-hidden="true" className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                     </svg>
                   ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg aria-hidden="true" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                   )}

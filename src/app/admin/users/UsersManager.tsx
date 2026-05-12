@@ -29,10 +29,13 @@ export default function UsersManager({ initialUsers }: { initialUsers: AdminUser
   const [users, setUsers] = useState(initialUsers);
   const [isPending, startTransition] = useTransition();
 
-  /* ── Create form state ── */
+  /* ── Create form state ──
+   *  DEFAULT_ROLE est désormais null (refus par défaut). Pour le formulaire
+   *  de création d'utilisateur, on impose "caissier" comme valeur initiale —
+   *  c'est le rôle avec le moins de privilèges. */
   const [email, setEmail]     = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole]         = useState<AdminRole>(DEFAULT_ROLE);
+  const [role, setRole]         = useState<AdminRole>((DEFAULT_ROLE ?? "caissier") as AdminRole);
   const [showPass, setShowPass] = useState(false);
   const [createMsg, setCreateMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -51,7 +54,7 @@ export default function UsersManager({ initialUsers }: { initialUsers: AdminUser
       const res = await createAdminUser(email.trim(), password, role);
       if (res.success) {
         setCreateMsg({ ok: true, text: `Compte ${ROLE_LABELS[role]} créé avec succès` });
-        setEmail(""); setPassword(""); setRole(DEFAULT_ROLE);
+        setEmail(""); setPassword(""); setRole((DEFAULT_ROLE ?? "caissier") as AdminRole);
         const { listAdminUsers } = await import("@/lib/actions/admin-users");
         setUsers(await listAdminUsers());
       } else {
@@ -205,9 +208,15 @@ export default function UsersManager({ initialUsers }: { initialUsers: AdminUser
                         </svg>
                       </div>
                       <p className="text-sm font-semibold text-gray-800 truncate">{u.email}</p>
-                      <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-[5px] ${ROLE_COLORS[u.role].bg} ${ROLE_COLORS[u.role].text}`}>
-                        {ROLE_LABELS[u.role]}
-                      </span>
+                      {u.role ? (
+                        <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-[5px] ${ROLE_COLORS[u.role].bg} ${ROLE_COLORS[u.role].text}`}>
+                          {ROLE_LABELS[u.role]}
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-[5px] bg-gray-100 text-gray-500">
+                          Sans rôle
+                        </span>
+                      )}
                     </div>
                     <div className="mt-1.5 pl-10 space-y-0.5">
                       <p className="text-xs text-gray-400">Créé le {formatDate(u.created_at)}</p>
@@ -218,11 +227,12 @@ export default function UsersManager({ initialUsers }: { initialUsers: AdminUser
                     <div className="mt-2 pl-10 flex items-center gap-2">
                       <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Rôle :</span>
                       <select
-                        value={u.role}
+                        value={u.role ?? ""}
                         onChange={(e) => handleRoleChange(u.id, e.target.value as AdminRole)}
                         disabled={isPending}
                         className="border border-gray-200 rounded-[5px] px-2 py-1 text-xs focus:outline-none focus:border-[#C9922A] bg-white"
                       >
+                        {!u.role && <option value="">— Sans rôle —</option>}
                         {ALL_ROLES.map((r) => (
                           <option key={r} value={r}>{ROLE_LABELS[r]}</option>
                         ))}

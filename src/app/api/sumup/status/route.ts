@@ -20,8 +20,15 @@ function maskKey(k: string | undefined): string {
 }
 
 export async function GET(req: Request) {
-  /* Token minimum pour ne pas exposer publiquement la check */
-  const expectedToken = process.env.ADMIN_HEALTHCHECK_TOKEN ?? "jolie-check-2026";
+  /* Token requis ; pas de fallback hardcodé. Si l'env n'est pas défini,
+   * l'endpoint est désactivé en prod. */
+  const expectedToken = process.env.ADMIN_HEALTHCHECK_TOKEN;
+  if (!expectedToken) {
+    return NextResponse.json(
+      { error: "Healthcheck désactivé (ADMIN_HEALTHCHECK_TOKEN absent)" },
+      { status: 503 }
+    );
+  }
   const url = new URL(req.url);
   const token = url.searchParams.get("token");
   if (token !== expectedToken) {

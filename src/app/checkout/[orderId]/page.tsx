@@ -16,7 +16,7 @@ export default async function CheckoutPage({
   /* Pas de commande ou pas de checkout id → erreur */
   if (!checkoutId || !orderNumber) {
     return (
-      <div className="min-h-screen bg-dark text-white flex flex-col items-center justify-center px-6 text-center">
+      <main className="min-h-screen bg-dark text-white flex flex-col items-center justify-center px-6 text-center">
         <h1 className="font-heading text-3xl font-bold mb-3">Commande introuvable</h1>
         <p className="text-white/50 text-sm mb-6">
           Le lien est invalide ou la commande n&apos;a pas de paiement en cours.
@@ -24,16 +24,16 @@ export default async function CheckoutPage({
         <Link href="/" className="bg-primary text-dark font-bold px-6 py-3 rounded-[5px]">
           Retour à l&apos;accueil
         </Link>
-      </div>
+      </main>
     );
   }
 
   /* Déjà payée → redirige direct vers le suivi */
   if (status === "paid" || status === "confirmed" || status === "preparing") {
     return (
-      <div className="min-h-screen bg-dark text-white flex flex-col items-center justify-center px-6 text-center">
+      <main className="min-h-screen bg-dark text-white flex flex-col items-center justify-center px-6 text-center">
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
-          <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
           </svg>
         </div>
@@ -45,7 +45,7 @@ export default async function CheckoutPage({
         >
           Voir le suivi
         </Link>
-      </div>
+      </main>
     );
   }
 

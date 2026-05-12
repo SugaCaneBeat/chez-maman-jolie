@@ -172,3 +172,27 @@ h1, h2, h3, h4 {
 .img-zoom:hover img {
   transform: scale(1.08);
 }
+
+/* ───────────────────────────────────────────────────────────
+ * Respect du paramètre système "réduire les animations" (iOS/macOS).
+ * Coupe toutes les animations longues + transitions et neutralise
+ * les keyframes (pulse-whatsapp en particulier qui boucle en continu
+ * et peut déclencher des nausées vestibulaires).
+ * ─────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .scroll-animate {
+    opacity: 1;
+    transform: none;
+  }
+  .animate-pulse-whatsapp {
+    animation: none !important;
+  }
+}

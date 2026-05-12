@@ -10,7 +10,7 @@ import type { Category } from "@/lib/menu";
 /* ─── Icônes 2D plates pour les sections ─── */
 const ICONS: Record<string, ReactNode> = {
   tous: (
-    <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none"
+    <svg aria-hidden="true" className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="3"  width="7" height="7" rx="1"/>
       <rect x="14" y="3" width="7" height="7" rx="1"/>
@@ -19,14 +19,14 @@ const ICONS: Record<string, ReactNode> = {
     </svg>
   ),
   entrees: (
-    <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none"
+    <svg aria-hidden="true" className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
       <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
       <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
     </svg>
   ),
   plats: (
-    <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none"
+    <svg aria-hidden="true" className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
       <path d="M7 2v20"/>
@@ -35,7 +35,7 @@ const ICONS: Record<string, ReactNode> = {
     </svg>
   ),
   desserts: (
-    <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none"
+    <svg aria-hidden="true" className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
       <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/>
       <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2 1 2 1"/>
@@ -45,7 +45,7 @@ const ICONS: Record<string, ReactNode> = {
     </svg>
   ),
   boissons: (
-    <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none"
+    <svg aria-hidden="true" className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
       <path d="M8 22h8M7 10h10M12 15v7"/>
       <path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H4c-1.5 4-2 6-2 8a5 5 0 0 0 5 5z"/>
@@ -151,7 +151,7 @@ export default function MenuTabs({ categories }: { categories: Category[] }) {
                   onClick={() => setActiveSub(cat.slug)}
                   className={`
                     flex-shrink-0 flex items-center gap-1.5
-                    h-9 px-4
+                    min-h-[44px] px-4 py-2
                     rounded-[5px] text-xs font-semibold
                     transition-all duration-200 ease-out
                     ${active

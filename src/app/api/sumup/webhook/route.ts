@@ -4,17 +4,19 @@
  * Configure ce endpoint dans le dashboard SumUp :
  *   https://chezmamanjolie.com/api/sumup/webhook
  *
- * SumUp envoie un POST JSON avec au minimum :
- *   {
- *     "id": "checkout-id",
- *     "event_type": "checkout.payment.successful" | "checkout.payment.failed" | ...,
- *     "payload": { "checkout_reference": "...", "status": "PAID", ... }
- *   }
- *
- * On retrouve la commande via sumup_checkout_id puis on met à jour le statut.
+ * Sécurité :
+ *   - Si SUMUP_WEBHOOK_SECRET est défini, on vérifie la signature HMAC SHA-256
+ *     dans l'en-tête X-Payload-Signature (format "sha256=<hex>") avant de
+ *     traiter le payload.
+ *   - On revalide ENSUITE le checkout via getSumUpCheckout() — source of truth.
+ *   - Transitions d'état atomiques : on ne passe à "paid" que si l'ordre est
+ *     encore "pending" (CAS via .eq("status", "pending")).
+ *   - Réponse toujours 200 sur les checkouts non liés pour éviter
+ *     l'énumération.
  */
 
 import { NextResponse } from "next/server";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { createServerClient } from "@/lib/supabase/server";
 import { getSumUpCheckout } from "@/lib/sumup";
 
@@ -32,25 +34,49 @@ interface WebhookPayload {
   };
 }
 
-export async function POST(req: Request) {
-  let body: WebhookPayload = {};
+function verifySignature(rawBody: string, signatureHeader: string | null, secret: string): boolean {
+  if (!signatureHeader) return false;
+  const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
+  const provided = signatureHeader.startsWith("sha256=")
+    ? signatureHeader.slice(7)
+    : signatureHeader;
+  if (provided.length !== expected.length) return false;
   try {
-    body = (await req.json()) as WebhookPayload;
+    return timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(provided, "hex"));
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return false;
+  }
+}
+
+export async function POST(req: Request) {
+  /* Toujours lire le brut pour la vérification HMAC */
+  const raw = await req.text();
+
+  const secret = process.env.SUMUP_WEBHOOK_SECRET;
+  if (secret) {
+    const sig = req.headers.get("x-payload-signature") ?? req.headers.get("x-sumup-signature");
+    if (!verifySignature(raw, sig, secret)) {
+      return NextResponse.json({ ok: true }, { status: 200 });
+    }
   }
 
-  /* SumUp peut envoyer le checkout id dans plusieurs champs selon la version */
+  let body: WebhookPayload = {};
+  try {
+    body = JSON.parse(raw) as WebhookPayload;
+  } catch {
+    return NextResponse.json({ ok: true }, { status: 200 });
+  }
+
   const checkoutId =
     body.payload?.checkout_id ?? body.checkout_id ?? body.id ?? null;
   if (!checkoutId) {
-    return NextResponse.json({ error: "missing checkout id" }, { status: 400 });
+    return NextResponse.json({ ok: true }, { status: 200 });
   }
 
-  /* Verify with SumUp API (source of truth) */
+  /* Source of truth : on revalide auprès de SumUp */
   const checkout = await getSumUpCheckout(checkoutId);
   if (!checkout) {
-    return NextResponse.json({ error: "checkout not found" }, { status: 404 });
+    return NextResponse.json({ ok: true }, { status: 200 });
   }
 
   const supabase = createServerClient();
@@ -61,19 +87,27 @@ export async function POST(req: Request) {
     .single();
 
   if (!order) {
-    return NextResponse.json({ ok: true, note: "order not linked" });
+    /* Toujours 200 — pas d'oracle d'énumération */
+    return NextResponse.json({ ok: true });
   }
 
-  if (checkout.status === "PAID" && order.status === "pending") {
-    await supabase.from("orders").update({ status: "paid" }).eq("id", order.id);
+  /* CAS atomique : on ne passe à "paid" que si l'ordre est encore "pending".
+   * Empêche un webhook tardif d'écraser un statut "preparing" / "delivered". */
+  if (checkout.status === "PAID") {
+    await supabase
+      .from("orders")
+      .update({ status: "paid" })
+      .eq("id", order.id)
+      .eq("status", "pending");
   } else if (checkout.status === "FAILED" || checkout.status === "EXPIRED") {
     await supabase
       .from("orders")
       .update({ status: "cancelled" })
-      .eq("id", order.id);
+      .eq("id", order.id)
+      .eq("status", "pending");
   }
 
-  return NextResponse.json({ ok: true, status: checkout.status });
+  return NextResponse.json({ ok: true });
 }
 
 /* health check */

@@ -55,7 +55,7 @@ export default async function Home() {
                   <h2 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-4">
                     {formulesCat?.name ?? "Nos Formules"}
                   </h2>
-                  <p className="text-white/40 max-w-lg mx-auto">
+                  <p className="text-white/60 max-w-lg mx-auto">
                     Des combinaisons compl&egrave;tes &agrave; petits prix &mdash; entr&eacute;e, plat, accompagnement, dessert et boisson.
                   </p>
                 </div>
@@ -79,7 +79,7 @@ export default async function Home() {
                 <h2 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-4">
                   Notre Carte
                 </h2>
-                <p className="text-white/40 max-w-lg mx-auto">
+                <p className="text-white/60 max-w-lg mx-auto">
                   Des plats authentiques pr&eacute;par&eacute;s avec des ingr&eacute;dients frais,
                   dans le respect des traditions culinaires africaines.
                 </p>

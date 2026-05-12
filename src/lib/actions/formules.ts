@@ -2,6 +2,9 @@
 
 import { createServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { requireRole } from "@/lib/auth/require-role";
+
+const MENU_ROLES = ["admin", "tech"] as const;
 
 /* ─── Types ─── */
 export interface PickerItem {
@@ -140,6 +143,9 @@ export async function saveFormule(data: {
   image?: string;
   components: Array<{ menuItemId: string; componentType: string }>;
 }): Promise<{ success: boolean; formuleId?: string; error?: string }> {
+  const auth = await requireRole([...MENU_ROLES]);
+  if (!auth.ok) return auth.error;
+
   const supabase = createServerClient();
 
   let formuleId = data.formuleId;
@@ -155,7 +161,10 @@ export async function saveFormule(data: {
       })
       .eq("id", formuleId);
 
-    if (updateErr) return { success: false, error: updateErr.message };
+    if (updateErr) {
+      console.warn("[formules] update:", updateErr.message);
+      return { success: false, error: "Mise à jour impossible" };
+    }
 
     // Remove old components
     const { error: delErr } = await supabase
@@ -163,7 +172,10 @@ export async function saveFormule(data: {
       .delete()
       .eq("formule_id", formuleId);
 
-    if (delErr) return { success: false, error: delErr.message };
+    if (delErr) {
+      console.warn("[formules] delete components:", delErr.message);
+      return { success: false, error: "Mise à jour impossible" };
+    }
   } else {
     // INSERT new menu_item
     const { data: inserted, error: insertErr } = await supabase
@@ -178,7 +190,10 @@ export async function saveFormule(data: {
       .select("id")
       .single();
 
-    if (insertErr || !inserted) return { success: false, error: insertErr?.message || "Insert failed" };
+    if (insertErr || !inserted) {
+      console.warn("[formules] insert:", insertErr?.message);
+      return { success: false, error: "Création impossible" };
+    }
     formuleId = inserted.id;
   }
 
@@ -192,7 +207,10 @@ export async function saveFormule(data: {
     }));
 
     const { error: compErr } = await supabase.from("formule_components").insert(rows);
-    if (compErr) return { success: false, error: compErr.message };
+    if (compErr) {
+      console.warn("[formules] insert components:", compErr.message);
+      return { success: false, error: "Création des composants impossible" };
+    }
   }
 
   revalidatePath("/admin/menu");
@@ -202,9 +220,15 @@ export async function saveFormule(data: {
 
 /* ─── deleteFormule ─── */
 export async function deleteFormule(id: string): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireRole([...MENU_ROLES]);
+  if (!auth.ok) return auth.error;
+
   const supabase = createServerClient();
   const { error } = await supabase.from("menu_items").delete().eq("id", id);
-  if (error) return { success: false, error: error.message };
+  if (error) {
+    console.warn("[formules] delete:", error.message);
+    return { success: false, error: "Suppression impossible" };
+  }
   revalidatePath("/admin/menu");
   revalidatePath("/");
   return { success: true };
@@ -212,6 +236,9 @@ export async function deleteFormule(id: string): Promise<{ success: boolean; err
 
 /* ─── toggleFormuleAvailable ─── */
 export async function toggleFormuleAvailable(id: string, available: boolean): Promise<{ success: boolean }> {
+  const auth = await requireRole([...MENU_ROLES]);
+  if (!auth.ok) return { success: false };
+
   const supabase = createServerClient();
   const { error } = await supabase.from("menu_items").update({ available }).eq("id", id);
   if (error) return { success: false };
@@ -222,6 +249,9 @@ export async function toggleFormuleAvailable(id: string, available: boolean): Pr
 
 /* ─── updateFormuleImage ─── */
 export async function updateFormuleImage(formuleId: string, imageUrl: string): Promise<{ success: boolean }> {
+  const auth = await requireRole([...MENU_ROLES]);
+  if (!auth.ok) return { success: false };
+
   const supabase = createServerClient();
   const { error } = await supabase.from("menu_items").update({ image: imageUrl }).eq("id", formuleId);
   if (error) return { success: false };

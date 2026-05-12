@@ -2,9 +2,15 @@
 
 import { createServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { requireRole } from "@/lib/auth/require-role";
+
+const ORDERS_ROLES = ["admin", "caissier"] as const;
 
 /* Polling client : ne renvoie que les changements récents */
 export async function getActiveOrders() {
+  const auth = await requireRole([...ORDERS_ROLES]);
+  if (!auth.ok) return { success: false, error: "Accès refusé", data: [] };
+
   const supabase = createServerClient();
   const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000); /* 48h */
   const { data, error } = await supabase
@@ -12,11 +18,17 @@ export async function getActiveOrders() {
     .select("*, order_items(*)")
     .gte("created_at", cutoff.toISOString())
     .order("created_at", { ascending: false });
-  if (error) return { success: false, error: error.message, data: [] };
+  if (error) {
+    console.warn("[admin-orders] getActiveOrders failed:", error.message);
+    return { success: false, error: "Lecture impossible", data: [] };
+  }
   return { success: true, data: data || [] };
 }
 
 export async function getOrders(filters?: { status?: string; limit?: number }) {
+  const auth = await requireRole([...ORDERS_ROLES]);
+  if (!auth.ok) return { success: false, error: "Accès refusé", data: [] };
+
   const supabase = createServerClient();
   let query = supabase
     .from("orders")
@@ -26,20 +38,29 @@ export async function getOrders(filters?: { status?: string; limit?: number }) {
   if (filters?.status && filters.status !== "all") {
     query = query.eq("status", filters.status);
   }
-  if (filters?.limit) {
-    query = query.limit(filters.limit);
-  }
+  /* Limite par défaut pour éviter de scanner toute la table */
+  const limit = Math.min(filters?.limit ?? 200, 500);
+  query = query.limit(limit);
 
   const { data, error } = await query;
-  if (error) return { success: false, error: error.message, data: [] };
+  if (error) {
+    console.warn("[admin-orders] getOrders failed:", error.message);
+    return { success: false, error: "Lecture impossible", data: [] };
+  }
   return { success: true, data: data || [] };
 }
 
 export async function deleteOrder(orderId: string): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireRole([...ORDERS_ROLES]);
+  if (!auth.ok) return auth.error;
+
   const supabase = createServerClient();
   /* Cascade : order_items est supprimé via ON DELETE CASCADE en DB */
   const { error } = await supabase.from("orders").delete().eq("id", orderId);
-  if (error) return { success: false, error: error.message };
+  if (error) {
+    console.warn("[admin-orders] deleteOrder failed:", error.message);
+    return { success: false, error: "Suppression impossible" };
+  }
   revalidatePath("/admin/orders");
   revalidatePath("/admin");
   return { success: true };
@@ -50,13 +71,24 @@ export async function bulkDeleteOrders(orderIds: string[]): Promise<{
   deletedCount: number;
   error?: string;
 }> {
+  const auth = await requireRole([...ORDERS_ROLES]);
+  if (!auth.ok) return { success: false, deletedCount: 0, error: "Accès refusé" };
+
   if (!orderIds.length) return { success: true, deletedCount: 0 };
+  /* Sécurité : limiter la taille du batch */
+  if (orderIds.length > 100) {
+    return { success: false, deletedCount: 0, error: "Trop d'éléments (max 100)" };
+  }
+
   const supabase = createServerClient();
   const { error, count } = await supabase
     .from("orders")
     .delete({ count: "exact" })
     .in("id", orderIds);
-  if (error) return { success: false, deletedCount: 0, error: error.message };
+  if (error) {
+    console.warn("[admin-orders] bulkDeleteOrders failed:", error.message);
+    return { success: false, deletedCount: 0, error: "Suppression en lot impossible" };
+  }
   revalidatePath("/admin/orders");
   revalidatePath("/admin");
   return { success: true, deletedCount: count ?? orderIds.length };
@@ -66,14 +98,24 @@ export async function bulkUpdateOrdersStatus(
   orderIds: string[],
   status: string
 ): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireRole([...ORDERS_ROLES]);
+  if (!auth.ok) return auth.error;
+
   if (!orderIds.length) return { success: true };
+  if (orderIds.length > 100) {
+    return { success: false, error: "Trop d'éléments (max 100)" };
+  }
+
   const supabase = createServerClient();
   const patch: Record<string, unknown> = { status };
   if (status === "delivered" || status === "cancelled") {
     patch.estimated_delivery_at = null;
   }
   const { error } = await supabase.from("orders").update(patch).in("id", orderIds);
-  if (error) return { success: false, error: error.message };
+  if (error) {
+    console.warn("[admin-orders] bulkUpdateOrdersStatus failed:", error.message);
+    return { success: false, error: "Mise à jour impossible" };
+  }
   revalidatePath("/admin/orders");
   revalidatePath("/admin");
   return { success: true };
@@ -84,6 +126,9 @@ export async function updateOrderStatus(
   status: string,
   etaMinutes?: number
 ) {
+  const auth = await requireRole([...ORDERS_ROLES]);
+  if (!auth.ok) return auth.error;
+
   const supabase = createServerClient();
   const patch: Record<string, unknown> = { status };
   /* Si on passe en livraison et qu'on a un ETA en minutes, on calcule la date */
@@ -95,13 +140,36 @@ export async function updateOrderStatus(
     patch.estimated_delivery_at = null;
   }
   const { error } = await supabase.from("orders").update(patch).eq("id", orderId);
-  if (error) return { success: false, error: error.message };
+  if (error) {
+    console.warn("[admin-orders] updateOrderStatus failed:", error.message);
+    return { success: false, error: "Mise à jour impossible" };
+  }
   revalidatePath("/admin/orders");
   revalidatePath("/admin");
   return { success: true };
 }
 
 export async function getOrderStats() {
+  const auth = await requireRole([...ORDERS_ROLES]);
+  if (!auth.ok) {
+    return {
+      todayOrderCount: 0,
+      todayRevenue: 0,
+      todayAOV: 0,
+      yesterdayRevenue: 0,
+      yesterdayCount: 0,
+      revenueDelta: 0,
+      countDelta: 0,
+      weekRevenue: 0,
+      pendingOrders: 0,
+      statusBreakdown: {} as Record<string, number>,
+      dailyRevenue: [] as { day: string; date: string; revenue: number; count: number }[],
+      paymentBreakdown: [] as { method: string; count: number; revenue: number }[],
+      totalMenuItems: 0,
+      unavailableItems: 0,
+    };
+  }
+
   const supabase = createServerClient();
   const now = new Date();
   const today = new Date(now); today.setHours(0, 0, 0, 0);
@@ -169,8 +237,8 @@ export async function getOrderStats() {
     });
   }
 
-  /* Payment method breakdown (today) */
-  const payMethods = ["carte", "lydia", "paylib", "wero"];
+  /* Payment method breakdown (today) — seule la carte est active */
+  const payMethods = ["carte"];
   const paymentBreakdown: { method: string; count: number; revenue: number }[] = payMethods.map((m) => ({
     method: m,
     count: todayOrders.filter((o) => o.payment_method === m).length,

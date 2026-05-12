@@ -10,7 +10,7 @@ const TABS = [
     href: "#accueil",
     action: "scroll" as const,
     icon: (
-      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none"
+      <svg aria-hidden="true" className="w-6 h-6" viewBox="0 0 24 24" fill="none"
         stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
         <path d="M9 21V12h6v9"/>
@@ -23,7 +23,7 @@ const TABS = [
     href: "#menu",
     action: "scroll" as const,
     icon: (
-      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none"
+      <svg aria-hidden="true" className="w-6 h-6" viewBox="0 0 24 24" fill="none"
         stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
         <path d="M7 2v20"/>
@@ -38,7 +38,7 @@ const TABS = [
     href: null,
     action: "cart" as const,
     icon: (
-      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none"
+      <svg aria-hidden="true" className="w-6 h-6" viewBox="0 0 24 24" fill="none"
         stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
         <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
         <line x1="3" y1="6" x2="21" y2="6"/>
@@ -52,7 +52,7 @@ const TABS = [
     href: null,
     action: "commander" as const,
     icon: (
-      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none"
+      <svg aria-hidden="true" className="w-6 h-6" viewBox="0 0 24 24" fill="none"
         stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
         <path d="M16 11V7a4 4 0 00-8 0v4"/>
         <path d="M5 9h14l1 12H4L5 9z"/>

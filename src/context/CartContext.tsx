@@ -33,7 +33,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount.
+  // Pattern d'hydratation depuis le storage client : on doit utiliser
+  // un effect (lazy init useState ne marche pas avec SSR — accès localStorage
+  // côté serveur impossible).
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/supabase/user";
 import { canAccess } from "@/lib/roles";
 import AdminNav, { type NavLink } from "./components/AdminNav";
@@ -60,12 +61,19 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     return <ToastProvider>{children}</ToastProvider>;
   }
 
-  const visibleNav = NAV_ITEMS.filter((item) => canAccess(user.role, item.href));
+  /* User connecté mais sans rôle → on le sort de l'admin. Le middleware
+   * fait déjà la même chose, mais on garde la garde TypeScript ici. */
+  if (!user.role) {
+    redirect("/admin/login?denied=1");
+  }
+
+  const userWithRole = { ...user, role: user.role };
+  const visibleNav = NAV_ITEMS.filter((item) => canAccess(userWithRole.role, item.href));
 
   return (
     <ToastProvider>
       <div className="min-h-screen bg-gray-50">
-        <AdminNav user={user} navItems={visibleNav} />
+        <AdminNav user={userWithRole} navItems={visibleNav} />
         <main className="md:ml-64 pt-14 md:pt-0 min-h-screen">
           <div className="p-4 md:p-6 lg:p-8">
             {children}

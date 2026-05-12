@@ -2,8 +2,18 @@
 
 import { createServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { requireRole } from "@/lib/auth/require-role";
 
 const BUCKET = "menu-images";
+const MENU_ROLES = ["admin", "tech"] as const;
+
+const ALLOWED_IMAGE_EXT = new Set(["jpg", "jpeg", "png", "webp", "gif"]);
+const ALLOWED_IMAGE_MIME = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
 
 export interface MediaImage {
   name: string;          // file name in bucket
@@ -14,6 +24,9 @@ export interface MediaImage {
 
 /* ─── List all images in the bucket ─── */
 export async function listMediaImages(): Promise<MediaImage[]> {
+  const auth = await requireRole([...MENU_ROLES]);
+  if (!auth.ok) return [];
+
   const supabase = createServerClient();
 
   const { data: files, error } = await supabase.storage
@@ -42,9 +55,20 @@ export async function listMediaImages(): Promise<MediaImage[]> {
 export async function deleteMediaImage(
   name: string
 ): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireRole([...MENU_ROLES]);
+  if (!auth.ok) return auth.error;
+
+  /* Empêcher la traversée de chemin : pas de /, .. */
+  if (name.includes("/") || name.includes("..")) {
+    return { success: false, error: "Nom de fichier invalide" };
+  }
+
   const supabase = createServerClient();
   const { error } = await supabase.storage.from(BUCKET).remove([name]);
-  if (error) return { success: false, error: error.message };
+  if (error) {
+    console.warn("[media] deleteMediaImage:", error.message);
+    return { success: false, error: "Suppression impossible" };
+  }
   revalidatePath("/admin/media");
   revalidatePath("/admin/menu");
   return { success: true };
@@ -52,16 +76,29 @@ export async function deleteMediaImage(
 
 /* ─── Upload (used by ImagePicker) ─── */
 export async function uploadMediaImage(formData: FormData) {
+  const auth = await requireRole([...MENU_ROLES]);
+  if (!auth.ok) return auth.error;
+
   const file = formData.get("file") as File | null;
   const label = (formData.get("label") as string) || "image";
 
   if (!file) return { success: false, error: "Aucun fichier" };
-  if (!file.type.startsWith("image/")) return { success: false, error: "Fichier non image" };
-  if (file.size > 5 * 1024 * 1024) return { success: false, error: "Image trop lourde (max 5MB)" };
+
+  /* Validation : MIME et extension via whitelist (les deux sont contrôlés par
+   * le client, on impose la cohérence). */
+  if (!ALLOWED_IMAGE_MIME.has(file.type)) {
+    return { success: false, error: "Format non supporté (JPG, PNG, WebP, GIF)" };
+  }
+  const ext = (file.name.split(".").pop() || "").toLowerCase();
+  if (!ALLOWED_IMAGE_EXT.has(ext)) {
+    return { success: false, error: "Extension non supportée" };
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    return { success: false, error: "Image trop lourde (max 5MB)" };
+  }
 
   const supabase = createServerClient();
 
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const safe = label.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || "image";
   const fileName = `${safe}-${Date.now()}.${ext}`;
 
@@ -75,7 +112,10 @@ export async function uploadMediaImage(formData: FormData) {
       contentType: file.type,
     });
 
-  if (error) return { success: false, error: error.message };
+  if (error) {
+    console.warn("[media] uploadMediaImage:", error.message);
+    return { success: false, error: "Upload impossible" };
+  }
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(fileName);
   revalidatePath("/admin/media");

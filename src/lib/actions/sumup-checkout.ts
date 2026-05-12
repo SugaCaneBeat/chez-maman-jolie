@@ -118,7 +118,13 @@ export async function verifyAndSyncSumUpPayment(
     if (!checkout) return { paid: false };
 
     if (checkout.status === "PAID") {
-      await supabase.from("orders").update({ status: "paid" }).eq("id", orderId);
+      /* CAS atomique : on ne réécrit pas si l'ordre a déjà avancé
+       * (preparing, ready, delivered, cancelled…). */
+      await supabase
+        .from("orders")
+        .update({ status: "paid" })
+        .eq("id", orderId)
+        .eq("status", "pending");
       return { paid: true };
     }
   } catch {

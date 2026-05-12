@@ -86,7 +86,7 @@ export default function Hero({ featured }: { featured?: MenuItem[] }) {
         {/* CTA buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-20 animate-fade-in-up animation-delay-300">
           <CommanderButton className="group inline-flex items-center justify-center gap-3 bg-gradient-to-r from-primary to-primary-light hover:from-primary-light hover:to-primary text-dark font-bold px-8 py-4 sm:py-5 rounded-[5px] text-base sm:text-lg transition-all hover:scale-105 hover:shadow-2xl hover:shadow-primary/30">
-            <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
             </svg>
             Commander
@@ -96,7 +96,7 @@ export default function Hero({ featured }: { featured?: MenuItem[] }) {
             className="group inline-flex items-center justify-center gap-2 glass hover:bg-white/10 text-white font-semibold px-8 py-4 sm:py-5 rounded-[5px] text-base sm:text-lg transition-all hover:scale-105"
           >
             D&eacute;couvrir la carte
-            <svg className="w-5 h-5 group-hover:translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" className="w-5 h-5 group-hover:translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </a>
@@ -143,7 +143,7 @@ export default function Hero({ featured }: { featured?: MenuItem[] }) {
               <div className="p-5 text-left">
                 <h3 className="font-heading text-white font-bold text-lg mb-1 truncate">{dish.name}</h3>
                 {(dish.desc || dish.accompagnement) && (
-                  <p className="text-white/40 text-sm truncate">
+                  <p className="text-white/60 text-sm truncate">
                     {dish.desc || dish.accompagnement}
                   </p>
                 )}

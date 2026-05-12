@@ -28,13 +28,13 @@ export default async function OrderTrackingPage({
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-dark text-white flex flex-col items-center justify-center px-6 text-center">
+      <main className="min-h-screen bg-dark text-white flex flex-col items-center justify-center px-6 text-center">
         <h1 className="font-heading text-3xl font-bold mb-3">Commande introuvable</h1>
         <p className="text-white/50 text-sm mb-6">Le lien est peut-être expiré ou incorrect.</p>
         <Link href="/" className="bg-primary text-dark font-bold px-6 py-3 rounded-[5px]">
           Retour à l&apos;accueil
         </Link>
-      </div>
+      </main>
     );
   }
 

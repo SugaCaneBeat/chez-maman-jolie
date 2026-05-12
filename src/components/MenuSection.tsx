@@ -62,7 +62,7 @@ export default function MenuSection({ title, items, showAccompagnement = false }
                 {item.name}
               </h4>
               {showAccompagnement && item.accompagnement && (
-                <p className="text-sm text-white/40 mt-1">{item.accompagnement}</p>
+                <p className="text-sm text-white/60 mt-1">{item.accompagnement}</p>
               )}
               {!item.image && (
                 <div className="flex items-center justify-between">

@@ -424,7 +424,7 @@ function AdminGuide() {
       </Section>
 
       <Section number={5} accent={accent} title="Endpoints utiles" description="Pour diagnostic et webhook">
-        <p><strong>Healthcheck SumUp</strong> : <Link href="/api/sumup/status?token=jolie-check-2026">/api/sumup/status?token=jolie-check-2026</Link></p>
+        <p><strong>Healthcheck SumUp</strong> : <Key>/api/sumup/status?token=&lt;ADMIN_HEALTHCHECK_TOKEN&gt;</Key> (récupère la valeur dans les env vars Vercel)</p>
         <p>Renvoie un JSON avec :</p>
         <ul className="list-disc list-inside space-y-1 ml-1">
           <li><Key>ready: true/false</Key></li>

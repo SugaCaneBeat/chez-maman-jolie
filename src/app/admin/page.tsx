@@ -79,7 +79,7 @@ export default async function AdminDashboard({
           <div>
             <p className="text-red-700 font-semibold text-sm">Accès refusé</p>
             <p className="text-red-600 text-xs mt-0.5">
-              {user
+              {user?.role
                 ? `Votre rôle (${ROLE_LABELS[user.role]}) ne donne pas accès à cette section. ${ROLE_DESCRIPTIONS[user.role]}.`
                 : "Vous n'avez pas les permissions nécessaires."}
             </p>

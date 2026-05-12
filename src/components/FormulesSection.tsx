@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import AddToCartButton from "./AddToCartButton";
 import type { FormulesData, Formule } from "@/lib/menu";
 
@@ -26,7 +27,14 @@ function ImageCollage({ images }: { images: string[] }) {
           key={i}
           className={`relative overflow-hidden ${count === 3 && i === 0 ? "row-span-2" : ""}`}
         >
-          <img src={img} alt="" className="w-full h-full object-cover" />
+          <Image
+            src={img}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 50vw, 200px"
+            className="object-cover"
+            unoptimized
+          />
         </div>
       ))}
     </div>
@@ -48,11 +56,14 @@ function FormuleCard({ formule, featured }: { formule: Formule; featured: boolea
     >
       {/* Card image area */}
       {formule.image ? (
-        <div className="h-44 overflow-hidden">
-          <img
+        <div className="relative h-44 overflow-hidden">
+          <Image
             src={formule.image}
             alt={formule.name}
-            className="w-full h-full object-cover"
+            fill
+            sizes="(max-width: 640px) 100vw, 400px"
+            className="object-cover"
+            unoptimized
           />
         </div>
       ) : componentImages.length > 0 ? (
@@ -111,7 +122,7 @@ export default function FormulesSection({ data }: { data: FormulesData }) {
       </div>
 
       {data.conditions && (
-        <p className="text-sm text-white/30 mt-6 text-center italic">
+        <p className="text-sm text-white/55 mt-6 text-center italic">
           * {data.conditions}
         </p>
       )}

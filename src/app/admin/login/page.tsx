@@ -56,7 +56,7 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-[#111008] flex items-center justify-center p-4">
+    <main className="min-h-screen bg-[#111008] flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-[#C9922A]">Chez Maman Jolie</h1>
@@ -125,6 +125,6 @@ export default function AdminLogin() {
         </form>
 
       </div>
-    </div>
+    </main>
   );
 }
