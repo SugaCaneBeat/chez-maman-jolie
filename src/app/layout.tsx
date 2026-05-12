@@ -73,7 +73,13 @@ export const metadata: Metadata = {
       "Cuisine africaine authentique : pondu, yassa, mafé. Livraison Paris 7j/7, traiteur événementiel.",
     // images : générées automatiquement via src/app/twitter-image.tsx
   },
-  // icons : laisser Next.js détecter automatiquement icon.tsx / apple-icon.tsx
+  /* icons:
+   * - icon       : détecté automatiquement via src/app/icon.svg
+   * - apple icon : pointe vers le même SVG (supporté iOS 12+)
+   */
+  icons: {
+    apple: { url: "/icon.svg", type: "image/svg+xml" },
+  },
   category: "restaurant",
   other: {
     "geo.region": "FR-75",
