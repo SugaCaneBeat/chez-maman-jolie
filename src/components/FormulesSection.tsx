@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import AddToCartButton from "./AddToCartButton";
-import type { FormulesData, Formule } from "@/lib/menu";
+import type { FormulesData, Formule, FormuleComponent } from "@/lib/menu";
 
 const COMPONENT_LABELS: Record<string, string> = {
   entree:         "Entrée",
@@ -12,31 +12,87 @@ const COMPONENT_LABELS: Record<string, string> = {
   boisson:        "Boisson",
 };
 
-/* ── CSS collage when no generated image ── */
-function ImageCollage({ images }: { images: string[] }) {
-  const count = Math.min(images.length, 4);
+/* Ordre d'affichage prioritaire des composants (les plus visuels d'abord) */
+const COMPONENT_PRIORITY: Record<string, number> = {
+  plat:           1,
+  entree:         2,
+  dessert:        3,
+  accompagnement: 4,
+  boisson:        5,
+};
+
+interface CollageTile {
+  src: string;
+  alt: string;
+}
+
+/* ── Collage des photos RÉELLES des composants sélectionnés ──
+ * Layouts intelligents selon le nombre de composants avec photo :
+ *  1 → plein cadre
+ *  2 → 1×2 horizontal
+ *  3 → 1 grand + 2 petits
+ *  4 → 2×2 grille classique
+ *  5 → 1 grand à gauche + 4 petits 2×2 à droite (formule complète) */
+function ComponentCollage({ tiles }: { tiles: CollageTile[] }) {
+  const count = tiles.length;
   if (count === 0) return null;
 
+  const baseImg = (t: CollageTile) => (
+    <Image
+      src={t.src}
+      alt={t.alt}
+      fill
+      sizes="(max-width: 640px) 50vw, 200px"
+      className="object-cover"
+      unoptimized
+    />
+  );
+
+  if (count === 1) {
+    return (
+      <div className="relative h-44 overflow-hidden">{baseImg(tiles[0])}</div>
+    );
+  }
+
+  if (count === 2) {
+    return (
+      <div className="grid grid-cols-2 gap-0.5 h-44">
+        {tiles.map((t, i) => (
+          <div key={i} className="relative overflow-hidden">{baseImg(t)}</div>
+        ))}
+      </div>
+    );
+  }
+
+  if (count === 3) {
+    return (
+      <div className="grid grid-cols-2 grid-rows-2 gap-0.5 h-44">
+        <div className="relative overflow-hidden row-span-2">{baseImg(tiles[0])}</div>
+        <div className="relative overflow-hidden">{baseImg(tiles[1])}</div>
+        <div className="relative overflow-hidden">{baseImg(tiles[2])}</div>
+      </div>
+    );
+  }
+
+  if (count === 4) {
+    return (
+      <div className="grid grid-cols-2 grid-rows-2 gap-0.5 h-44">
+        {tiles.map((t, i) => (
+          <div key={i} className="relative overflow-hidden">{baseImg(t)}</div>
+        ))}
+      </div>
+    );
+  }
+
+  /* 5 ou + : grand plat à gauche + 4 mini à droite (2x2) */
   return (
-    <div
-      className="grid gap-0.5 h-44"
-      style={{ gridTemplateColumns: count <= 1 ? "1fr" : "1fr 1fr" }}
-    >
-      {images.slice(0, count).map((img, i) => (
-        <div
-          key={i}
-          className={`relative overflow-hidden ${count === 3 && i === 0 ? "row-span-2" : ""}`}
-        >
-          <Image
-            src={img}
-            alt=""
-            fill
-            sizes="(max-width: 640px) 50vw, 200px"
-            className="object-cover"
-            unoptimized
-          />
-        </div>
-      ))}
+    <div className="grid grid-cols-2 gap-0.5 h-44">
+      <div className="relative overflow-hidden">{baseImg(tiles[0])}</div>
+      <div className="grid grid-cols-2 grid-rows-2 gap-0.5">
+        {tiles.slice(1, 5).map((t, i) => (
+          <div key={i} className="relative overflow-hidden">{baseImg(t)}</div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -44,9 +100,23 @@ function ImageCollage({ images }: { images: string[] }) {
 /* ── Single formule card ── */
 function FormuleCard({ formule, featured }: { formule: Formule; featured: boolean }) {
   const hasRealComponents = formule.id && !formule.id.startsWith("fallback-");
-  const componentImages = formule.components
-    .map(c => c.item.image)
-    .filter((img): img is string => Boolean(img));
+
+  /* Photos RÉELLES des composants sélectionnés — on n'utilise PAS formule.image
+   * qui peut être un collage admin générique ne reflétant pas les vrais items. */
+  const tiles: CollageTile[] = formule.components
+    .slice()
+    .sort((a, b) =>
+      (COMPONENT_PRIORITY[a.component_type] ?? 99) -
+      (COMPONENT_PRIORITY[b.component_type] ?? 99)
+    )
+    .filter((c): c is FormuleComponent & { item: { image: string; name: string; id: string } } =>
+      Boolean(c.item?.image)
+    )
+    .map(c => ({ src: c.item.image as string, alt: c.item.name }));
+
+  /* Fallback pour les formules sans aucun composant lié (anciennes données) :
+   * on accepte formule.image en dernier recours uniquement. */
+  const showFormuleFallback = tiles.length === 0 && Boolean(formule.image);
 
   return (
     <div
@@ -54,11 +124,13 @@ function FormuleCard({ formule, featured }: { formule: Formule; featured: boolea
         featured ? "sm:-translate-y-3 ring-2 ring-primary/30" : ""
       }`}
     >
-      {/* Card image area */}
-      {formule.image ? (
+      {/* Card image area — toujours les vraies photos des items sélectionnés */}
+      {tiles.length > 0 ? (
+        <ComponentCollage tiles={tiles} />
+      ) : showFormuleFallback ? (
         <div className="relative h-44 overflow-hidden">
           <Image
-            src={formule.image}
+            src={formule.image as string}
             alt={formule.name}
             fill
             sizes="(max-width: 640px) 100vw, 400px"
@@ -66,8 +138,6 @@ function FormuleCard({ formule, featured }: { formule: Formule; featured: boolea
             unoptimized
           />
         </div>
-      ) : componentImages.length > 0 ? (
-        <ImageCollage images={componentImages} />
       ) : null}
 
       {/* Card body */}
@@ -99,6 +169,7 @@ function FormuleCard({ formule, featured }: { formule: Formule; featured: boolea
         )}
 
         <AddToCartButton
+          variant="prominent"
           item={{ id: formule.id || formule.name, name: formule.name, price: formule.price }}
           className="mx-auto mt-2"
         />
