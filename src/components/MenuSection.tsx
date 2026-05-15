@@ -4,6 +4,7 @@ import Image from "next/image";
 import AddToCartButton from "./AddToCartButton";
 
 interface MenuItem {
+  id?: string;
   name: string;
   price: number;
   accompagnement?: string;
@@ -30,7 +31,7 @@ export default function MenuSection({ title, items, showAccompagnement = false }
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {items.map((item) => (
           <div
-            key={item.name}
+            key={item.id ?? item.name}
             className="group glass rounded-[5px] overflow-hidden hover:bg-white/10 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/5"
           >
             {item.image && (
@@ -48,12 +49,19 @@ export default function MenuSection({ title, items, showAccompagnement = false }
                     {item.badge}
                   </span>
                 )}
-                <span className="absolute bottom-3 right-3 bg-primary/90 backdrop-blur-sm text-dark font-bold px-3 py-1 rounded-[5px] text-sm">
+                <span className="absolute bottom-3 left-3 bg-primary/95 backdrop-blur-sm text-dark font-bold px-3 py-1 rounded-[5px] text-sm shadow-lg">
                   {formatPrice(item.price)}
                 </span>
+                {/* Bouton + toujours visible (variant prominent), pour mobile sans hover */}
                 <AddToCartButton
-                  item={{ id: item.name, name: item.name, price: item.price, image: item.image }}
-                  className="absolute top-3 right-3 opacity-0 group-hover:opacity-100"
+                  variant="prominent"
+                  item={{
+                    id: item.id ?? item.name,
+                    name: item.name,
+                    price: item.price,
+                    image: item.image,
+                  }}
+                  className="absolute bottom-3 right-3"
                 />
               </div>
             )}
@@ -65,11 +73,15 @@ export default function MenuSection({ title, items, showAccompagnement = false }
                 <p className="text-sm text-white/60 mt-1">{item.accompagnement}</p>
               )}
               {!item.image && (
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mt-2">
                   <span className="text-primary font-bold text-lg">{formatPrice(item.price)}</span>
                   <AddToCartButton
-                    item={{ id: item.name, name: item.name, price: item.price }}
-                    className=""
+                    variant="prominent"
+                    item={{
+                      id: item.id ?? item.name,
+                      name: item.name,
+                      price: item.price,
+                    }}
                   />
                 </div>
               )}
