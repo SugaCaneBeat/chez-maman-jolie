@@ -93,8 +93,11 @@ export default function Contact() {
               </p>
             </div>
 
-            {/* Traiteur — wide */}
-            <div className="col-span-2 glass rounded-[5px] p-6 sm:p-8 hover:bg-white/8 transition-all group bg-gradient-to-br from-primary/5 to-transparent">
+            {/* Traiteur — wide, lien email pour devis */}
+            <a
+              href="mailto:hello@chezmamanjolie.com?subject=Demande%20de%20devis%20traiteur%20%E2%80%94%20Chez%20Maman%20Jolie"
+              className="col-span-2 glass rounded-[5px] p-6 sm:p-8 hover:bg-white/8 transition-all group bg-gradient-to-br from-primary/5 to-transparent block"
+            >
               <div className="flex items-center gap-5">
                 <div className="w-14 h-14 bg-primary/10 rounded-[5px] flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                   <svg aria-hidden="true" className="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,12 +106,18 @@ export default function Contact() {
                 </div>
                 <div>
                   <h3 className="font-heading font-bold text-white text-lg mb-1">Traiteur &Eacute;v&eacute;nementiel</h3>
-                  <p className="text-white/60 text-sm">
-                    Mariages, anniversaires, repas d&apos;entreprise... Contactez-nous pour un devis personnalis&eacute;.
+                  <p className="text-white/60 text-sm mb-1">
+                    Mariages, anniversaires, repas d&apos;entreprise... Devis personnalis&eacute; sur demande.
+                  </p>
+                  <p className="text-primary text-xs font-semibold inline-flex items-center gap-1">
+                    hello@chezmamanjolie.com
+                    <svg aria-hidden="true" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
                   </p>
                 </div>
               </div>
-            </div>
+            </a>
           </div>
         </ScrollAnimation>
       </div>

@@ -13,6 +13,7 @@
 
 const SITE_URL = "https://www.chezmamanjolie.com";
 const PHONE = "+33753873213";
+const EMAIL = "hello@chezmamanjolie.com";
 const SOCIAL = ["https://www.instagram.com/chezmamanjolie/"];
 
 type MenuItem = {
@@ -262,6 +263,7 @@ function buildSchema() {
     logo: `${SITE_URL}/logo.svg`,
     image: [`${SITE_URL}/og-image.jpg`],
     telephone: PHONE,
+    email: EMAIL,
     priceRange: "€€",
     servesCuisine: [
       "Cuisine africaine",
@@ -367,6 +369,7 @@ function buildSchema() {
     contactPoint: {
       "@type": "ContactPoint",
       telephone: PHONE,
+      email: EMAIL,
       contactType: "customer service",
       areaServed: "FR",
       availableLanguage: ["French"],

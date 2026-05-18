@@ -13,6 +13,10 @@ export const PHONE_DISPLAY = "07 53 87 32 13";     // pour l'UI
 export const TEL_HREF = `tel:${PHONE_E164}`;
 export const WA_HREF = `https://wa.me/${PHONE_WA}`;
 
+/* Email — forwardé via ImprovMX vers sugacanebeat@gmail.com */
+export const EMAIL = "hello@chezmamanjolie.com";
+export const EMAIL_HREF = `mailto:${EMAIL}`;
+
 /* Réseaux sociaux */
 export const INSTAGRAM_URL = "https://www.instagram.com/chezmamanjolie/";
 export const INSTAGRAM_HANDLE = "@chezmamanjolie";
