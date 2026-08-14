@@ -119,11 +119,11 @@ export default function RootLayout({
       <head>
         <link
           rel="preconnect"
-          href="https://qczjisuztjekkjgnqnpl.supabase.co"
+          href="https://supabasekong-npkkmhlz0qn2iijxcwv7y9jv.187.77.94.131.sslip.io"
         />
         <link
           rel="dns-prefetch"
-          href="https://qczjisuztjekkjgnqnpl.supabase.co"
+          href="https://supabasekong-npkkmhlz0qn2iijxcwv7y9jv.187.77.94.131.sslip.io"
         />
         <link rel="preconnect" href="https://wa.me" />
       </head>
