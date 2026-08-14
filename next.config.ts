@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "qczjisuztjekkjgnqnpl.supabase.co",
       },
+      {
+        /* Supabase dédiée self-hosted (VPS Hostinger / Coolify) */
+        protocol: "https",
+        hostname: "supabasekong-npkkmhlz0qn2iijxcwv7y9jv.187.77.94.131.sslip.io",
+      },
     ],
   },
   async headers() {

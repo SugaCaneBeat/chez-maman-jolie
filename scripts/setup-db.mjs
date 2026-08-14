@@ -5,8 +5,14 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const url = 'https://qczjisuztjekkjgnqnpl.supabase.co';
-const key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjemppc3V6dGpla2tqZ25xbnBsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTUxMzcxMCwiZXhwIjoyMDkxMDg5NzEwfQ.zO06Y-s8Y07cAwmqgLSN5sFEPr9x2_obW2IjjlILLII';
+// Creds lues depuis l'environnement — ne jamais hardcoder de clé service_role.
+// Usage: node --env-file=.env.local scripts/setup-db.mjs
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!url || !key) {
+  console.error('❌ NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY manquants (charge .env.local).');
+  process.exit(1);
+}
 
 const supabase = createClient(url, key);
 
